@@ -3,6 +3,7 @@ import { checkWord } from './utils/checkWord';
 import { shuffleBag } from './utils/shuffleBag';
 import { createSquareBoard } from './utils/createBoard';
 import { drawTiles } from './utils/drawTiles';
+import { exchangeTiles } from './utils/exchangeTiles';
 
 interface BloomFilterMetadata {
   bitArraySize: number,
@@ -14,11 +15,6 @@ interface PlayerInformation {
   playerId: number,
   score: number,
   tilesRack: string[]
-}
-
-interface PlayerTiles {
-  playerOne: String[]
-  playerTwo: String[]
 }
 
 const App = () => {
@@ -53,10 +49,10 @@ const App = () => {
     "X",
     "Y", "Y",
     "Z",
-    "", "" // blanks
+    "*", "*" // blanks
   ])
   const [board, setBoard] = useState<(string | null)[][]>(createSquareBoard(15))
-  const [gameState, setGameState] = useState({ numOfPlayers: 2 })
+  const [gameState, setGameState] = useState({playerTurn: 1, numOfPlayers: 2 })
   const [PlayerInformation, setPlayerInformation] = useState<PlayerInformation[]>([{
     playerId: 1,
     score: 0,
@@ -66,7 +62,6 @@ const App = () => {
     score: 0,
     tilesRack: []
   }]);
-
 
   useEffect(() => {
     const fetchBloomFilter = async () => {
@@ -95,11 +90,40 @@ const App = () => {
 
   const StartGame = () => {
     // Shuffle Tiles
-    let currentTileBag = shuffleBag(tileBag)
+    const unshuffledTileBag = [
+      "A", "A", "A", "A", "A", "A", "A", "A", "A",
+      "B", "B",
+      "C", "C",
+      "D", "D", "D", "D",
+      "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E",
+      "F", "F",
+      "G", "G", "G",
+      "H", "H",
+      "I", "I", "I", "I", "I", "I", "I", "I", "I",
+      "J",
+      "K",
+      "L", "L", "L", "L",
+      "M", "M",
+      "N", "N", "N", "N", "N", "N",
+      "O", "O", "O", "O", "O", "O", "O", "O",
+      "P", "P",
+      "Q",
+      "R", "R", "R", "R", "R", "R",
+      "S", "S", "S", "S",
+      "T", "T", "T", "T", "T", "T",
+      "U", "U", "U", "U",
+      "V", "V",
+      "W", "W",
+      "X",
+      "Y", "Y",
+      "Z",
+      "*", "*" // blanks
+    ]
+    let currentTileBag = shuffleBag(unshuffledTileBag)
     // Set Number of Players
     let newPlayers = []
     for (let i = 1; i < gameState.numOfPlayers + 1; i++) {
-      const { remainingTilesInBag, newTileRack } = drawTiles(currentTileBag, [])
+      const { remainingTilesInBag, newTileRack } = drawTiles(currentTileBag, [], 7)
       currentTileBag = remainingTilesInBag
       newPlayers.push({ playerId: i, score: 0, tilesRack: newTileRack })
     }
@@ -108,7 +132,11 @@ const App = () => {
     setTileBag(currentTileBag)
   }
 
-console.log(tileBag.length)
+  console.log(tileBag.length)
+
+const handleExchange = () => {
+  
+}
 
   const handleDraw = () => {
     if (!tileBag) return
@@ -166,6 +194,7 @@ console.log(tileBag.length)
         <option value="4">4</option>
       </select>
       <button onClick={() => { StartGame() }}>Start Game</button>
+      <button onClick={() => { handleExchange() }}>Exchange</button>
 
       <button onClick={() => { handleDraw() }}>Draw</button>
       <div className="flex">
