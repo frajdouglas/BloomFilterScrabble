@@ -1,0 +1,205 @@
+import { useState, useEffect, useRef } from 'react'
+import { checkWord } from './utils/checkWord';
+import { shuffleBag } from './utils/shuffleBag';
+import { createSquareBoard } from './utils/createBoard';
+import { drawTiles } from './utils/drawTiles';
+
+interface BloomFilterMetadata {
+  bitArraySize: number,
+  numberOfHashFunctions: number,
+  seeds: number[]
+}
+
+interface PlayerInformation {
+  playerId: number,
+  score: number,
+  tilesRack: string[]
+}
+
+interface PlayerTiles {
+  playerOne: String[]
+  playerTwo: String[]
+}
+
+const App = () => {
+  const bloomFilterRef = useRef<Uint8Array | null>(null);
+  const metadataRef = useRef<BloomFilterMetadata | null>(null);
+  const [text, setText] = useState('')
+  const [loading, setLoading] = useState(true);
+  const [tileBag, setTileBag] = useState<string[]>([
+    "A", "A", "A", "A", "A", "A", "A", "A", "A",
+    "B", "B",
+    "C", "C",
+    "D", "D", "D", "D",
+    "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E",
+    "F", "F",
+    "G", "G", "G",
+    "H", "H",
+    "I", "I", "I", "I", "I", "I", "I", "I", "I",
+    "J",
+    "K",
+    "L", "L", "L", "L",
+    "M", "M",
+    "N", "N", "N", "N", "N", "N",
+    "O", "O", "O", "O", "O", "O", "O", "O",
+    "P", "P",
+    "Q",
+    "R", "R", "R", "R", "R", "R",
+    "S", "S", "S", "S",
+    "T", "T", "T", "T", "T", "T",
+    "U", "U", "U", "U",
+    "V", "V",
+    "W", "W",
+    "X",
+    "Y", "Y",
+    "Z",
+    "", "" // blanks
+  ])
+  const [board, setBoard] = useState<(string | null)[][]>(createSquareBoard(15))
+  const [gameState, setGameState] = useState({ numOfPlayers: 2 })
+  const [PlayerInformation, setPlayerInformation] = useState<PlayerInformation[]>([{
+    playerId: 1,
+    score: 0,
+    tilesRack: []
+  }, {
+    playerId: 2,
+    score: 0,
+    tilesRack: []
+  }]);
+
+
+  useEffect(() => {
+    const fetchBloomFilter = async () => {
+      try {
+        const [metaResponse, binResponse] = await Promise.all([
+          fetch("/bloom-metadata.json"),
+          fetch("/bloom.bin")
+        ]);
+        if (!metaResponse.ok || !binResponse.ok) throw new Error("Failed to fetch filter");
+
+        const [metadataJson, arrayBuffer] = await Promise.all([
+          metaResponse.json(),
+          binResponse.arrayBuffer()
+        ]);
+
+        bloomFilterRef.current = new Uint8Array(arrayBuffer);
+        metadataRef.current = metadataJson;
+        setLoading(false);
+      } catch (err) {
+        console.error("Error loading Bloom filter:", err);
+      }
+    }
+    fetchBloomFilter()
+  }, []);
+  console.log(tileBag, PlayerInformation)
+
+  const StartGame = () => {
+    // Shuffle Tiles
+    let currentTileBag = shuffleBag(tileBag)
+    // Set Number of Players
+    let newPlayers = []
+    for (let i = 1; i < gameState.numOfPlayers + 1; i++) {
+      const { remainingTilesInBag, newTileRack } = drawTiles(currentTileBag, [])
+      currentTileBag = remainingTilesInBag
+      newPlayers.push({ playerId: i, score: 0, tilesRack: newTileRack })
+    }
+
+    setPlayerInformation(newPlayers)
+    setTileBag(currentTileBag)
+  }
+
+console.log(tileBag.length)
+
+  const handleDraw = () => {
+    if (!tileBag) return
+
+    // const updatedPlayers = PlayerInformation.map((player) => {
+    //       const { remainingTilesInBag, newTileRack } = drawTiles(currentTileBag, player.tilesRack)
+    //       currentTileBag = remainingTilesInBag
+    //       return { ...player, tilesRack: newTileRack }
+    //     })
+
+
+
+    // let currentPlayersTiles = [...playersTiles.playerOne]
+    // let currentTileBag = [...tileBag]
+
+    // while (currentPlayersTiles.length < 7 && currentTileBag.length > 0) {
+    //   const newTileFromBag = currentTileBag.pop()
+    //   if (newTileFromBag !== undefined) {
+    //     currentPlayersTiles.push(newTileFromBag)
+    //   }
+    // }
+    // setPlayersTiles({ ...playersTiles, playerOne: currentPlayersTiles })
+    // setTileBag(currentTileBag)
+  }
+
+  const handleCheckWord = (query: string) => {
+    if (!bloomFilterRef.current || !metadataRef.current) {
+      return
+    }
+
+    setText(query)
+
+    const isValidWord = checkWord(query, bloomFilterRef.current, metadataRef.current?.bitArraySize, metadataRef.current.seeds)
+    console.log(isValidWord, query)
+  }
+
+  if (loading) {
+    return <div>Loading</div>
+  }
+
+  return (
+    <>
+      <h1 className="text-3xl font-bold underline">
+        Hello world!
+      </h1>
+      <input
+        className="border border-gray-400 p-2 rounded w-full max-w-xs"
+        onChange={(e) => handleCheckWord(e.target.value)}
+        value={text}
+      />
+      <select value={gameState.numOfPlayers}
+        onChange={e => setGameState({ ...gameState, numOfPlayers: Number(e.target.value) })}>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+      </select>
+      <button onClick={() => { StartGame() }}>Start Game</button>
+
+      <button onClick={() => { handleDraw() }}>Draw</button>
+      <div className="flex">
+        {tileBag.length > 0 &&
+          tileBag.map((item) => {
+            return <div>{item}</div>
+          })}
+      </div>
+      <div className="flex flex-col">
+        {PlayerInformation.length > 0 &&
+          PlayerInformation.map((player) => (
+            <div key={player.playerId} className="flex space-x-1">
+              Player ID: {player.playerId}
+              {player.tilesRack.map((tile, idx) => (
+                <div key={idx} className="border p-2 w-8 h-8 flex items-center justify-center">
+                  {tile}
+                </div>
+              ))}
+            </div>
+          ))
+        }
+      </div>
+      <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${board[0].length}, minmax(0, 1fr))` }}>
+        {board.flat().map((tile, idx) => (
+          <div
+            key={idx}
+            className="aspect-square border border-gray-400 flex items-center justify-center text-lg font-bold select-none bg-yellow-50"
+          >
+            {tile}
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+export default App
