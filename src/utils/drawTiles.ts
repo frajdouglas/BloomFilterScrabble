@@ -1,5 +1,3 @@
-
-
 export const drawTiles = (tileBag: string[], playerTileRack: string[], numberOfTilesToDraw: number): { remainingTilesInBag: string[]; newTileRack: string[] } => {
     if (!tileBag) return { remainingTilesInBag: [], newTileRack: [...playerTileRack] }
     let remainingTilesInBag = [...tileBag]

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { checkWord } from './utils/checkWord';
 import { shuffleBag } from './utils/shuffleBag';
-import { createSquareBoard } from './utils/createBoard';
+import { createSquareBoard } from './utils/createSquareBoard';
 import { drawTiles } from './utils/drawTiles';
 import { exchangeTiles } from './utils/exchangeTiles';
+import { getPotentialWords } from './utils/getPotentialWords';
 
 interface BloomFilterMetadata {
   bitArraySize: number,
@@ -52,7 +53,7 @@ const App = () => {
     "*", "*" // blanks
   ])
   const [board, setBoard] = useState<(string | null)[][]>(createSquareBoard(15))
-  const [gameState, setGameState] = useState({playerTurn: 1, numOfPlayers: 2 })
+  const [gameState, setGameState] = useState({ playerTurn: 1, numOfPlayers: 2 })
   const [PlayerInformation, setPlayerInformation] = useState<PlayerInformation[]>([{
     playerId: 1,
     score: 0,
@@ -132,11 +133,46 @@ const App = () => {
     setTileBag(currentTileBag)
   }
 
-  console.log(tileBag.length)
+  console.log(board)
 
-const handleExchange = () => {
-  
-}
+  const handleTest = () => {
+    const newWordCoordsArray = [[0, 2], [0, 3], [0, 4], [0,5]]
+    const board = Array.from({ length: 15 }, () => Array(15).fill(null))
+
+    board[0][0] = "R"
+    board[0][1] = "E"
+    board[0][2] = "T"
+    board[0][3] = "U"
+    board[0][4] = "R"
+    board[0][5] = "N"
+    console.log(board, 'board for func')
+    getPotentialWords(board, newWordCoordsArray)
+  }
+
+  const handleExchange = () => {
+
+  }
+
+  const handleDragEnd = () => {
+    // player has dragged tile into a position
+
+    // word and connecting words are sent to validator, if any false then fails
+
+    // if valid then allowed to be placed
+
+    // else the drag is stopped and tile returns to its board
+
+  }
+
+  const handleTurnPlay = () => {
+    // player has dragged a tile into a correct position. and selects submit
+
+    // valid words are calculated and total score is added to the playerinformation state
+
+    // Tiles are redrawn
+
+    // Game end is checked
+  }
 
   const handleDraw = () => {
     if (!tileBag) return
@@ -195,6 +231,7 @@ const handleExchange = () => {
       </select>
       <button onClick={() => { StartGame() }}>Start Game</button>
       <button onClick={() => { handleExchange() }}>Exchange</button>
+      <button onClick={() => { handleTest() }}>Test Potential Words Function</button>
 
       <button onClick={() => { handleDraw() }}>Draw</button>
       <div className="flex">
