@@ -41,275 +41,85 @@
 // Empty board, returns just 1 string
 // Connects to another word, returns two strings
 export const getPotentialWords = (board: (string | null)[][], coordinatesOfNewWord: number[][]): { wordsToValidate: string[] } => {
+
+    const crawlAndConstructString = (board: (string | null)[][], startRow: number, startCol: number, rowStep: number, colStep: number) => {
+        let rowIndex = startRow
+        let colIndex = startCol
+        let result = ''
+        while (rowIndex >= 0 && rowIndex <= board.length && colIndex >= 0 && colIndex <= board.length) {
+            if (!board[rowIndex][colIndex]) break;
+            const letter = board[rowIndex][colIndex]
+            if (rowStep === -1 || colStep === -1) {
+                result = letter + result
+            } else {
+                result = result + letter
+            }
+            rowIndex += rowStep
+            colIndex += colStep
+        }
+        return result;
+    }
+
     let wordsToValidate = []
-
     // Derive Word Direction, right, down or edge case where just one letter
-
     const wordDirection = coordinatesOfNewWord.length === 1 ? 'none' : coordinatesOfNewWord[0][0] === coordinatesOfNewWord[1][0] ? 'horizontal' : 'vertical'
 
     if (wordDirection === 'none') {
-        let xCoordOfNewWord = coordinatesOfNewWord[0][0]
-        let yCoordOfNewWord = coordinatesOfNewWord[0][1]
+        const leftString = crawlAndConstructString(board, coordinatesOfNewWord[0][0], coordinatesOfNewWord[0][1], 0, -1)
+        const rightString = crawlAndConstructString(board, coordinatesOfNewWord[0][0], coordinatesOfNewWord[0][1] + 1, 0, 1)
+        const horizontalStringToValidate = leftString + rightString
+        const upString = crawlAndConstructString(board, coordinatesOfNewWord[0][0], coordinatesOfNewWord[0][1], -1, 0)
+        const downString = crawlAndConstructString(board, coordinatesOfNewWord[0][0] + 1, coordinatesOfNewWord[0][1], 1, 0)
+        const verticalStringToValidate = upString + downString
 
-        let stopConditionLeftDirection = false
-        let horizontalStringToValidate = ''
-        let pointerLeftDirection = yCoordOfNewWord
-        while (stopConditionLeftDirection === false) {
-            const letterOfNewWord = board[xCoordOfNewWord][pointerLeftDirection]
-            console.log(pointerLeftDirection, letterOfNewWord, 'pointerLeftDirection')
-
-            if (letterOfNewWord === null || letterOfNewWord === undefined) {
-                stopConditionLeftDirection = true
-            } else {
-                horizontalStringToValidate = letterOfNewWord + horizontalStringToValidate
-                pointerLeftDirection--
-            }
-
+        if (horizontalStringToValidate.length > 1) {
+            wordsToValidate.push(horizontalStringToValidate)
         }
-        console.log(horizontalStringToValidate, 'wordsToValidate After left direction')
 
-        let stopConditionRightDirection = false
-        let pointerRightDirection = yCoordOfNewWord + 1
-        while (stopConditionRightDirection === false) {
-            const letterOfNewWord = board[xCoordOfNewWord][pointerRightDirection]
-            console.log(pointerRightDirection, letterOfNewWord, 'pointerRightDirection')
-            // Stop when you reach the end of the new word entered 
-            if (letterOfNewWord === null || letterOfNewWord === undefined) {
+        if (verticalStringToValidate.length > 1) {
+            wordsToValidate.push(verticalStringToValidate)
+        }
+
+    } else if (wordDirection === 'horizontal') {
+        const leftString = crawlAndConstructString(board, coordinatesOfNewWord[0][0], coordinatesOfNewWord[0][1], 0, -1)
+        const rightString = crawlAndConstructString(board, coordinatesOfNewWord[0][0], coordinatesOfNewWord[0][1] + 1, 0, 1)
+        const horizontalStringToValidate = leftString + rightString
+
+        if (horizontalStringToValidate.length > 1) {
+            wordsToValidate.push(horizontalStringToValidate)
+        }
+
+        for (let i = 0; i < coordinatesOfNewWord.length; i++) {
+            const upString = crawlAndConstructString(board, coordinatesOfNewWord[i][0], coordinatesOfNewWord[i][1], -1, 0)
+            const downString = crawlAndConstructString(board, coordinatesOfNewWord[i][0] + 1, coordinatesOfNewWord[i][1], 1, 0)
+            const verticalStringToValidate = upString + downString
+
+            if (verticalStringToValidate.length > 1) {
+                wordsToValidate.push(verticalStringToValidate)
+            }
+        }
+    }
+    else if (wordDirection === 'vertical') {
+        const upString = crawlAndConstructString(board, coordinatesOfNewWord[0][0], coordinatesOfNewWord[0][1], -1, 0)
+        const downString = crawlAndConstructString(board, coordinatesOfNewWord[0][0] + 1, coordinatesOfNewWord[0][1], 1, 0)
+        const verticalStringToValidate = upString + downString
+
+        if (verticalStringToValidate.length > 1) {
+            wordsToValidate.push(verticalStringToValidate)
+        }
+
+        for (let i = 0; i < coordinatesOfNewWord.length; i++) {
+            const leftString = crawlAndConstructString(board, coordinatesOfNewWord[i][0], coordinatesOfNewWord[i][1], 0, -1)
+            const rightString = crawlAndConstructString(board, coordinatesOfNewWord[i][0], coordinatesOfNewWord[i][1] + 1, 0, 1)
+            const horizontalStringToValidate = leftString + rightString
+
+            if (horizontalStringToValidate.length > 1) {
                 wordsToValidate.push(horizontalStringToValidate)
-                stopConditionRightDirection = true
-            } else {
-                horizontalStringToValidate = horizontalStringToValidate + letterOfNewWord
-                pointerRightDirection++
+            }
+
 
             }
         }
-        console.log(wordsToValidate, 'wordsToValidate After right direction')
 
-        // For each horizontal letter in the new word, look up and down and add these to the array
-        // Look left and look right, build string
-        let stopConditionUpDirection = false
-        let verticalStringToValidate = ''
-        let pointerUpDirection = xCoordOfNewWord
-        console.log(board[pointerUpDirection][yCoordOfNewWord])
-
-        while (stopConditionUpDirection === false) {
-            if (pointerUpDirection < 0) break;
-            const letterOfNewWord = board[pointerUpDirection][yCoordOfNewWord]
-            console.log(pointerUpDirection, letterOfNewWord, 'pointerUpDirection')
-
-            if (letterOfNewWord === null || letterOfNewWord === undefined) {
-                stopConditionUpDirection = true
-            } else {
-                verticalStringToValidate = letterOfNewWord + verticalStringToValidate
-                pointerUpDirection--
-            }
-
-        }
-        console.log(verticalStringToValidate, 'wordsToValidate After Up direction')
-
-        let stopConditionDownDirection = false
-        let pointerDownDirection = xCoordOfNewWord + 1
-        while (stopConditionDownDirection === false) {
-            const letterOfNewWord = board[pointerDownDirection][yCoordOfNewWord]
-            console.log(pointerDownDirection, letterOfNewWord, 'pointerDownDirection')
-
-            if (letterOfNewWord === null || letterOfNewWord === undefined) {
-                if (verticalStringToValidate.length > 1) {
-                    wordsToValidate.push(verticalStringToValidate)
-                }
-                stopConditionDownDirection = true
-            } else {
-                verticalStringToValidate = verticalStringToValidate + letterOfNewWord
-                pointerDownDirection++
-            }
-
-        }
-        console.log(wordsToValidate, 'wordsToValidate After Down direction')
+        return { wordsToValidate: wordsToValidate }
     }
-
-    if (wordDirection === 'horizontal') {
-        // Iterate through letters - Right direction
-        for (let i = 0; i < coordinatesOfNewWord.length; i++) {
-            let xCoordOfNewWord = coordinatesOfNewWord[i][0]
-            let yCoordOfNewWord = coordinatesOfNewWord[i][1]
-            console.log(board[xCoordOfNewWord][yCoordOfNewWord], 'LETTER OF THE NEW WORD')
-
-            // Only look for the horizontal line once starting from the first provided coordinate
-            if (coordinatesOfNewWord[0][0] === xCoordOfNewWord && coordinatesOfNewWord[0][1] === yCoordOfNewWord) {
-                // Look left and look right, build string
-                let stopConditionLeftDirection = false
-                let horizontalStringToValidate = ''
-                let pointerLeftDirection = yCoordOfNewWord
-                while (stopConditionLeftDirection === false) {
-                    const letterOfNewWord = board[xCoordOfNewWord][pointerLeftDirection]
-                    console.log(pointerLeftDirection, letterOfNewWord, 'pointerLeftDirection')
-
-                    if (letterOfNewWord === null || letterOfNewWord === undefined) {
-                        stopConditionLeftDirection = true
-                    } else {
-                        horizontalStringToValidate = letterOfNewWord + horizontalStringToValidate
-                        pointerLeftDirection--
-                    }
-
-                }
-                console.log(horizontalStringToValidate, 'wordsToValidate After left direction')
-
-                let stopConditionRightDirection = false
-                let pointerRightDirection = yCoordOfNewWord + 1
-                while (stopConditionRightDirection === false) {
-                    const letterOfNewWord = board[xCoordOfNewWord][pointerRightDirection]
-                    console.log(pointerRightDirection, letterOfNewWord, 'pointerRightDirection')
-                    // Stop when you reach the end of the new word entered 
-                    if (letterOfNewWord === null || letterOfNewWord === undefined) {
-                        wordsToValidate.push(horizontalStringToValidate)
-                        stopConditionRightDirection = true
-                    } else {
-                        horizontalStringToValidate = horizontalStringToValidate + letterOfNewWord
-                        pointerRightDirection++
-                    }
-
-
-                }
-                console.log(wordsToValidate, 'wordsToValidate After right direction')
-            }
-            // For each horizontal letter in the new word, look up and down and add these to the array
-            // Look left and look right, build string
-            let stopConditionUpDirection = false
-            let verticalStringToValidate = ''
-            let pointerUpDirection = xCoordOfNewWord
-            console.log(board[pointerUpDirection][yCoordOfNewWord])
-
-            while (stopConditionUpDirection === false) {
-                if (pointerUpDirection < 0) break;
-                const letterOfNewWord = board[pointerUpDirection][yCoordOfNewWord]
-                console.log(pointerUpDirection, letterOfNewWord, 'pointerUpDirection')
-
-                if (letterOfNewWord === null || letterOfNewWord === undefined) {
-                    stopConditionUpDirection = true
-                } else {
-                    verticalStringToValidate = letterOfNewWord + verticalStringToValidate
-                    pointerUpDirection--
-                }
-
-            }
-            console.log(verticalStringToValidate, 'wordsToValidate After Up direction')
-
-            let stopConditionDownDirection = false
-            let pointerDownDirection = xCoordOfNewWord + 1
-            while (stopConditionDownDirection === false) {
-                const letterOfNewWord = board[pointerDownDirection][yCoordOfNewWord]
-                console.log(pointerDownDirection, letterOfNewWord, 'pointerDownDirection')
-
-                if (letterOfNewWord === null || letterOfNewWord === undefined) {
-                    if (verticalStringToValidate.length > 1) {
-                        wordsToValidate.push(verticalStringToValidate)
-                    }
-                    stopConditionDownDirection = true
-                } else {
-                    verticalStringToValidate = verticalStringToValidate + letterOfNewWord
-                    pointerDownDirection++
-                }
-
-            }
-            console.log(wordsToValidate, 'wordsToValidate After Down direction')
-
-        }
-
-    } else if (wordDirection === 'vertical') {
-        // Iterate through letters - Down direction
-        for (let i = 0; i < coordinatesOfNewWord.length; i++) {
-            let xCoordOfNewWord = coordinatesOfNewWord[i][0]
-            let yCoordOfNewWord = coordinatesOfNewWord[i][1]
-            console.log(board[xCoordOfNewWord][yCoordOfNewWord], 'LETTER OF THE NEW WORD')
-
-            // Only look for the vertical line once starting from the first provided coordinate
-            if (coordinatesOfNewWord[0][0] === xCoordOfNewWord && coordinatesOfNewWord[0][1] === yCoordOfNewWord) {
-                // Look Up and look Down, build string
-                let stopConditionUpDirection = false
-                let verticalStringToValidate = ''
-                let pointerUpDirection = xCoordOfNewWord
-                while (stopConditionUpDirection === false) {
-                    if (pointerUpDirection < 0) break;
-
-                    const letterOfNewWord = board[pointerUpDirection][yCoordOfNewWord]
-                    console.log(pointerUpDirection, letterOfNewWord, 'pointerUpDirection')
-
-                    if (letterOfNewWord === null || letterOfNewWord === undefined) {
-                        stopConditionUpDirection = true
-                    } else {
-                        verticalStringToValidate = letterOfNewWord + verticalStringToValidate
-                        pointerUpDirection--
-                    }
-
-                }
-                console.log(verticalStringToValidate, 'wordsToValidate After Up direction')
-
-                let stopConditionDownDirection = false
-                let pointerDownDirection = xCoordOfNewWord + 1
-                while (stopConditionDownDirection === false) {
-                    console.log(pointerDownDirection, yCoordOfNewWord, ' THIS')
-                    const letterOfNewWord = board[pointerDownDirection][yCoordOfNewWord]
-                    console.log(pointerDownDirection, letterOfNewWord, 'pointerDownDirection')
-                    // Stop when you reach the end of the new word entered 
-                    if (letterOfNewWord === null || letterOfNewWord === undefined) {
-                        wordsToValidate.push(verticalStringToValidate)
-                        stopConditionDownDirection = true
-                    } else {
-                        verticalStringToValidate = verticalStringToValidate + letterOfNewWord
-                        pointerDownDirection++
-                    }
-
-
-                }
-                console.log(wordsToValidate, 'wordsToValidate After right direction')
-            }
-            // For each horizontal letter in the new word, look up and down and add these to the array
-            // Look left and look right, build string
-            let stopConditionLeftDirection = false
-            let horizontalStringToValidate = ''
-            let pointerLeftDirection = yCoordOfNewWord
-            console.log(board[xCoordOfNewWord][pointerLeftDirection])
-
-            while (stopConditionLeftDirection === false) {
-                if (pointerLeftDirection < 0) break;
-                const letterOfNewWord = board[xCoordOfNewWord][pointerLeftDirection]
-                console.log(pointerLeftDirection, letterOfNewWord, 'pointerLeftDirection')
-
-                if (letterOfNewWord === null || letterOfNewWord === undefined) {
-                    stopConditionLeftDirection = true
-                } else {
-                    horizontalStringToValidate = letterOfNewWord + horizontalStringToValidate
-                    pointerLeftDirection--
-                }
-
-            }
-            console.log(horizontalStringToValidate, 'wordsToValidate After Left direction')
-
-            let stopConditionRightDirection = false
-            let pointerRightDirection = yCoordOfNewWord + 1
-            while (stopConditionRightDirection === false) {
-                const letterOfNewWord = board[xCoordOfNewWord][pointerRightDirection]
-                console.log(pointerRightDirection, letterOfNewWord, 'pointerRightDirection')
-
-                if (letterOfNewWord === null || letterOfNewWord === undefined) {
-                    if (horizontalStringToValidate.length > 1) {
-                        wordsToValidate.push(horizontalStringToValidate)
-                    }
-                    stopConditionRightDirection = true
-                } else {
-                    horizontalStringToValidate = horizontalStringToValidate + letterOfNewWord
-                    pointerRightDirection++
-                }
-
-            }
-            console.log(wordsToValidate, 'wordsToValidate After Down direction')
-
-        }
-    }
-
-
-    return { wordsToValidate: wordsToValidate }
-    // any of these return false then we return empty 
-
-    // Else we calculate the scores using the lookup table
-}
