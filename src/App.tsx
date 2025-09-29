@@ -5,9 +5,11 @@ import { drawTiles } from './utils/drawTiles';
 import { exchangeTiles } from './utils/exchangeTiles';
 import { getPotentialWords } from './utils/getPotentialWords';
 import { createSquareBoardWithBonus } from './utils/createSquareBoardWithBonus';
-import { Tile } from './components/Tile';
 import type { Square, PlayerInformation } from './types/board';
 import { TileRack } from './components/TileRack';
+import { DndContext } from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import { Board } from './components/Board';
 
 interface BloomFilterMetadata {
   bitArraySize: number,
@@ -51,11 +53,23 @@ const App = () => {
     "Z",
     "*", "*" // blanks
   ])
-const [board, setBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
+  const [board, setBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
 
+  const [activeTile, setActiveTile] = useState<string | null>(null);
+  const [newLetterCoordinates, setNewLetterCoordinates] = useState<number[][]>([]);
 
   const [gameState, setGameState] = useState({ playerTurn: 1, numOfPlayers: 2 })
   const [PlayerInformation, setPlayerInformation] = useState<PlayerInformation[]>([{
+    playerId: 1,
+    score: 0,
+    tilesRack: []
+  }, {
+    playerId: 2,
+    score: 0,
+    tilesRack: []
+  }]);
+  const [backupBoard, setBackupBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
+  const [backupPlayerInformation, setBackupPlayerInformation] = useState<PlayerInformation[]>([{
     playerId: 1,
     score: 0,
     tilesRack: []
@@ -134,8 +148,6 @@ const [board, setBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
     setTileBag(currentTileBag)
   }
 
-  console.log(board)
-
   const handleTest = () => {
     const newWordCoordsArray = [[0, 2], [0, 3], [0, 4], [0, 5]]
     const board = Array.from({ length: 15 }, () => Array(15).fill(null))
@@ -154,18 +166,66 @@ const [board, setBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
 
   }
 
-  const handleDragEnd = () => {
-    // player has dragged tile into a position
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    console.log(over, active)
+    if (!over || !over.data || !over.data.current) return; // dropped outside
+    if (!active || !active.data || !active.data.current) return; // dropped outside
 
-    // word and connecting words are sent to validator, if any false then fails
+    let tileDropXCoord = over.data.current.row
+    let tileDropYCoord = over.data.current.column
 
-    // if valid then allowed to be placed
+    if (board[tileDropXCoord][tileDropYCoord].letter) {
+      return;
+    }
 
-    // else the drag is stopped and tile returns to its board
+    let newLetter = active.data.current.letter
+    let tilesRackLetterIndexToRemove = active.data.current.originalIndex
+    let playerTurnId = gameState.playerTurn
+    let addedLetterCoordinates = [...newLetterCoordinates]
+    addedLetterCoordinates.push([tileDropXCoord, tileDropYCoord])
 
-  }
+    let boardCopy = [...board]
+    let rowToUpdate = [...boardCopy[tileDropXCoord]]
+    rowToUpdate[tileDropYCoord] = { ...rowToUpdate[tileDropYCoord], letter: newLetter }
+    boardCopy[tileDropXCoord] = rowToUpdate
+
+
+    // GetPotential Words call here
+    let wordsPreview = getPotentialWords(boardCopy, addedLetterCoordinates)
+    console.log(wordsPreview, 'words preview')
+    // Add to the new letter coordinates state as the player plays their letters
+    setNewLetterCoordinates(addedLetterCoordinates)
+    // Remove the tile from the player's tile rack
+    setPlayerInformation((prev) => {
+      const updatedPlayer = prev.map((player) => {
+        if (player.playerId === playerTurnId) {
+          const newTilesRack = [...player.tilesRack]
+          newTilesRack.splice(tilesRackLetterIndexToRemove, 1)
+          return { ...player, tilesRack: newTilesRack }
+        }
+        return player
+      })
+      return updatedPlayer
+    })
+    // Update the board ui with the new letter 
+    setBoard(boardCopy)
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    console.log('Drag started!');
+    const data = event.active.data.current as { letter: string } | undefined;
+    if (data) {
+      setActiveTile(data.letter);
+    }
+  };
+
 
   const handleTurnPlay = () => {
+
+// Validate placements
+
+
     // player has dragged a tile into a correct position. and selects submit
 
     // valid words are calculated and total score is added to the playerinformation state
@@ -173,6 +233,8 @@ const [board, setBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
     // Tiles are redrawn
 
     // Game end is checked
+
+    // Backup Player Information and Board state is saved for invalid moves 
   }
 
   const handleDraw = () => {
@@ -215,7 +277,7 @@ const [board, setBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
   }
 
   return (
-    <>
+    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <h1 className="text-3xl font-bold underline">
         Hello world!
       </h1>
@@ -244,20 +306,13 @@ const [board, setBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
       <div className="flex flex-col">
         {PlayerInformation.length > 0 &&
           PlayerInformation.map((player) => (
-            <TileRack player={player}/>
+            <TileRack player={player} />
           ))
         }
       </div>
-      <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${board[0].length}, minmax(0, 1fr))` }}>
-        {board.flat().map((square, idx) => (
-          <Tile
-            key={idx}
-            tileContent={square.letter}
-            bonusTileContent={square.bonus}
-          />
-        ))}
-      </div>
-    </>
+      <Board board={board} />
+
+    </DndContext>
   )
 }
 
