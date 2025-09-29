@@ -6,7 +6,8 @@ import { exchangeTiles } from './utils/exchangeTiles';
 import { getPotentialWords } from './utils/getPotentialWords';
 import { createSquareBoardWithBonus } from './utils/createSquareBoardWithBonus';
 import { Tile } from './components/Tile';
-import type { Square } from './types/board';
+import type { Square, PlayerInformation } from './types/board';
+import { TileRack } from './components/TileRack';
 
 interface BloomFilterMetadata {
   bitArraySize: number,
@@ -14,11 +15,7 @@ interface BloomFilterMetadata {
   seeds: number[]
 }
 
-interface PlayerInformation {
-  playerId: number,
-  score: number,
-  tilesRack: string[]
-}
+
 
 const App = () => {
   const bloomFilterRef = useRef<Uint8Array | null>(null);
@@ -247,14 +244,7 @@ const [board, setBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
       <div className="flex flex-col">
         {PlayerInformation.length > 0 &&
           PlayerInformation.map((player) => (
-            <div key={player.playerId} className="flex space-x-1">
-              Player ID: {player.playerId}
-              {player.tilesRack.map((tile, idx) => (
-                <div key={idx} className="border p-2 w-8 h-8 flex items-center justify-center">
-                  {tile}
-                </div>
-              ))}
-            </div>
+            <TileRack player={player}/>
           ))
         }
       </div>

@@ -6,3 +6,8 @@ export type Square = {
   used: boolean;            // whether bonus has already been applied
 };
 
+export interface PlayerInformation {
+  playerId: number,
+  score: number,
+  tilesRack: string[]
+}
