@@ -1,6 +1,27 @@
 import type { Square } from "../types/board"
 import { letterPoints } from "../constants/letterPoints"
-export const getPotentialWords = (board: Square[][], coordinatesOfNewWord: number[][]): { word: string, score: number }[] => {
+export const getPotentialWords = (board: Square[][], coordinatesOfNewWord: number[][], isFirstMove: boolean): { word: string, score: number }[] => {
+
+  const hasConnection = coordinatesOfNewWord.some(([row, col]) => {
+        const neighbors = [
+            [row - 1, col], // above
+            [row + 1, col], // below
+            [row, col - 1], // left
+            [row, col + 1], // right
+        ];
+        return neighbors.some(([r, c]) =>
+            r >= 0 &&
+            r < board.length &&
+            c >= 0 &&
+            c < board[0].length &&
+            board[r][c].letter !== null &&
+            !coordinatesOfNewWord.some(([nr, nc]) => nr === r && nc === c) // ignore newly placed tiles
+        );
+    });
+
+    if (!hasConnection && !isFirstMove) {
+        return [];
+    }
 
     const crawlAndConstructStringAndCalculateWordScore = (board: Square[][], startRow: number, startCol: number, rowStep: number, colStep: number) => {
         let wordScoreTotal = 0
@@ -84,7 +105,7 @@ export const getPotentialWords = (board: Square[][], coordinatesOfNewWord: numbe
         const upString = crawlAndConstructStringAndCalculateWordScore(board, coordinatesOfNewWord[0][0], coordinatesOfNewWord[0][1], -1, 0)
         const downString = crawlAndConstructStringAndCalculateWordScore(board, coordinatesOfNewWord[0][0] + 1, coordinatesOfNewWord[0][1], 1, 0)
         console.log(upString, downString, 'strings')
-    
+
         const verticalStringToValidate = upString.word + downString.word
         const verticalWordScore = upString.score + downString.score
         const verticalTotalWordMultiplier = upString.wordMultiplier * downString.wordMultiplier
