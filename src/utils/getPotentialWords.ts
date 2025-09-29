@@ -1,54 +1,14 @@
-// export const getPotentialWords = (board, rowIndex, colIndex, bloomFilter, bitArraySize, seeds) => {
-//     const boardSize = board.length
-//     // look left
-//     let stopCondition = false
-//     let stringToValidate = ''
-//     while (!stopCondition) {
-//         console.log(board[rowIndex][colIndex])
-//         stringToValidate += board[rowIndex][colIndex]
-//         if (board[rowIndex][colIndex] === null) {
-//             const isWordValid = checkWord(stringToValidate, bloomFilter, bitArraySize, seeds)
-//             console.log(stringToValidate, isWordValid)
+import type { Square } from "../types/board"
 
-//             if (!isWordValid) {
-//                 stopCondition = true
-//             }
-//         }
-//         colIndex++
-//     }
+export const getPotentialWords = (board: Square[][], coordinatesOfNewWord: number[][]): { wordsToValidate: string[] } => {
 
-//     // End conditions are either, a blank space
-
-//     // for(let i=0; i < b )
-
-//     // look right
-
-//     // look up
-//     // look down
-
-
-//     // any of these return false then we return empty 
-
-//     // Else we calculate the scores using the lookup table
-// }
-
-// 
-
-// [[0,0],[0,1],[0,2]]
-
-
-//Test Cases
-// Empty board, returns just 1 string
-// Connects to another word, returns two strings
-export const getPotentialWords = (board: (string | null)[][], coordinatesOfNewWord: number[][]): { wordsToValidate: string[] } => {
-
-    const crawlAndConstructString = (board: (string | null)[][], startRow: number, startCol: number, rowStep: number, colStep: number) => {
+    const crawlAndConstructString = (board: Square[][], startRow: number, startCol: number, rowStep: number, colStep: number) => {
         let rowIndex = startRow
         let colIndex = startCol
         let result = ''
         while (rowIndex >= 0 && rowIndex <= board.length && colIndex >= 0 && colIndex <= board.length) {
-            if (!board[rowIndex][colIndex]) break;
-            const letter = board[rowIndex][colIndex]
+            if (!board[rowIndex][colIndex].letter) break;
+            const letter = board[rowIndex][colIndex].letter
             if (rowStep === -1 || colStep === -1) {
                 result = letter + result
             } else {

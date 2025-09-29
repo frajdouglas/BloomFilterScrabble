@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { checkWord } from './utils/checkWord';
 import { shuffleBag } from './utils/shuffleBag';
-import { createSquareBoard } from './utils/createSquareBoard';
 import { drawTiles } from './utils/drawTiles';
 import { exchangeTiles } from './utils/exchangeTiles';
 import { getPotentialWords } from './utils/getPotentialWords';
+import { createSquareBoardWithBonus } from './utils/createSquareBoardWithBonus';
+import { Tile } from './components/Tile';
+import type { Square } from './types/board';
 
 interface BloomFilterMetadata {
   bitArraySize: number,
@@ -52,7 +54,9 @@ const App = () => {
     "Z",
     "*", "*" // blanks
   ])
-  const [board, setBoard] = useState<(string | null)[][]>(createSquareBoard(15))
+const [board, setBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
+
+
   const [gameState, setGameState] = useState({ playerTurn: 1, numOfPlayers: 2 })
   const [PlayerInformation, setPlayerInformation] = useState<PlayerInformation[]>([{
     playerId: 1,
@@ -136,7 +140,7 @@ const App = () => {
   console.log(board)
 
   const handleTest = () => {
-    const newWordCoordsArray = [[0, 2], [0, 3], [0, 4], [0,5]]
+    const newWordCoordsArray = [[0, 2], [0, 3], [0, 4], [0, 5]]
     const board = Array.from({ length: 15 }, () => Array(15).fill(null))
 
     board[0][0] = "R"
@@ -255,13 +259,12 @@ const App = () => {
         }
       </div>
       <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${board[0].length}, minmax(0, 1fr))` }}>
-        {board.flat().map((tile, idx) => (
-          <div
+        {board.flat().map((square, idx) => (
+          <Tile
             key={idx}
-            className="aspect-square border border-gray-400 flex items-center justify-center text-lg font-bold select-none bg-yellow-50"
-          >
-            {tile}
-          </div>
+            tileContent={square.letter}
+            bonusTileContent={square.bonus}
+          />
         ))}
       </div>
     </>
