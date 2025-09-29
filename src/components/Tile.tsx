@@ -1,3 +1,5 @@
+import { bonusColour } from "../constants/bonusColours";
+
 interface TileProps {
   tileContent: string | null;
   bonusTileContent: string | null;
@@ -6,13 +8,6 @@ interface TileProps {
 export const Tile = ({ tileContent, bonusTileContent }: TileProps) => {
   const isBonus = (b: string | null): b is "DL" | "TL" | "DW" | "TW" => {
     return b === "DL" || b === "TL" || b === "DW" || b === "TW";
-  };
-
-  const bonusColour: Record<"DL" | "TL" | "DW" | "TW", string> = {
-    DL: "bg-blue-200",
-    TL: "bg-blue-400",
-    DW: "bg-red-200",
-    TW: "bg-red-400",
   };
 
   return (
