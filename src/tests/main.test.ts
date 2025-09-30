@@ -144,13 +144,13 @@ describe('getPotentialWords', () => {
     })
 
 
-    test('Horizontal placed word with no connections returns just that word and correct score counts', () => {
-        const newWordCoordsArray = [[0, 2], [0, 3], [0, 4], [0, 5]]
+    test('Horizontal placed word with no connections returns just that word', () => {
+        const newWordCoordsArray = [[7, 4], [7, 5], [7, 6], [7, 7]]
         const board = createSquareBoardWithBonus(15)
-        board[0][2].letter = "T"
-        board[0][3].letter = "U"
-        board[0][4].letter = "R"
-        board[0][5].letter = "N"
+        board[7][4].letter = "T"
+        board[7][5].letter = "U"
+        board[7][6].letter = "R"
+        board[7][7].letter = "N"
         const potentialWords = getPotentialWords(board, newWordCoordsArray, true)
         const wordsToValidate = potentialWords.map((item) => item.word)
         expect(wordsToValidate).toEqual(['TURN'])
@@ -165,7 +165,7 @@ describe('getPotentialWords', () => {
         board[0][3].letter = "U"
         board[0][4].letter = "R"
         board[0][5].letter = "N"
-        const potentialWords = getPotentialWords(board, newWordCoordsArray, true)
+        const potentialWords = getPotentialWords(board, newWordCoordsArray, false)
         const wordsToValidate = potentialWords.map((item) => item.word)
         expect(wordsToValidate).toEqual(['RETURN'])
     })
@@ -233,14 +233,14 @@ describe('getPotentialWords', () => {
     })
 
     test('Vertical placed word with Vertical connections returns the connected vertical word', () => {
-        const newWordCoordsArray = [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0]]
+        const newWordCoordsArray = [[2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7]]
         const board = createSquareBoardWithBonus(15)
-        board[0][0].letter = "R"
-        board[1][0].letter = "E"
-        board[2][0].letter = "T"
-        board[3][0].letter = "U"
-        board[4][0].letter = "R"
-        board[5][0].letter = "N"
+        board[2][7].letter = "R"
+        board[3][7].letter = "E"
+        board[4][7].letter = "T"
+        board[5][7].letter = "U"
+        board[6][7].letter = "R"
+        board[7][7].letter = "N"
         const potentialWords = getPotentialWords(board, newWordCoordsArray, true)
         const wordsToValidate = potentialWords.map((item) => item.word)
         expect(wordsToValidate).toEqual(['RETURN'])
@@ -270,44 +270,51 @@ describe('getPotentialWords', () => {
     test('Correct score counts with no bonuses', () => {
         const newWordCoordsArray = [[4, 8], [4, 9], [4, 10], [4, 11]]
         const board = createSquareBoardWithBonus(15)
+
+        board[3][8].letter = "A"
+
         board[4][8].letter = "T"
         board[4][9].letter = "U"
         board[4][10].letter = "R"
         board[4][11].letter = "N"
-        const potentialWords = getPotentialWords(board, newWordCoordsArray, true)
+        const potentialWords = getPotentialWords(board, newWordCoordsArray, false)
         const wordsToValidate = potentialWords.map((item) => item.word)
         const totalScore = potentialWords.reduce((sum, w) => sum + w.score, 0);
-        expect(wordsToValidate).toEqual(['TURN'])
-        expect(totalScore).toBe(4)
+        expect(wordsToValidate).toEqual(['TURN', 'AT'])
+        expect(totalScore).toBe(6)
     })
 
     test('Correct score counts with DL bonus ', () => {
         const newWordCoordsArray = [[6, 6], [6, 5], [6, 4], [6, 3]]
         const board = createSquareBoardWithBonus(15)
+        board[5][3].letter = "A"
+
         board[6][3].letter = "T"
         board[6][4].letter = "U"
         board[6][5].letter = "R"
         board[6][6].letter = "N"
-        const potentialWords = getPotentialWords(board, newWordCoordsArray, true)
+        const potentialWords = getPotentialWords(board, newWordCoordsArray, false)
         const wordsToValidate = potentialWords.map((item) => item.word)
         const totalScore = potentialWords.reduce((sum, w) => sum + w.score, 0);
-        expect(wordsToValidate).toEqual(['TURN'])
-        expect(totalScore).toBe(5)
+        expect(wordsToValidate).toEqual(['TURN', 'AT'])
+        expect(totalScore).toBe(7)
 
     })
 
     test('Correct score counts with TL bonus ', () => {
         const newWordCoordsArray = [[5, 2], [5, 3], [5, 4], [5, 5]]
         const board = createSquareBoardWithBonus(15)
+        board[4][2].letter = "A"
+
         board[5][2].letter = "T"
         board[5][3].letter = "U"
         board[5][4].letter = "R"
         board[5][5].letter = "N"
-        const potentialWords = getPotentialWords(board, newWordCoordsArray, true)
+        const potentialWords = getPotentialWords(board, newWordCoordsArray, false)
         const wordsToValidate = potentialWords.map((item) => item.word)
         const totalScore = potentialWords.reduce((sum, w) => sum + w.score, 0);
-        expect(wordsToValidate).toEqual(['TURN'])
-        expect(totalScore).toBe(6)
+        expect(wordsToValidate).toEqual(['TURN', 'AT'])
+        expect(totalScore).toBe(8)
 
     })
 
@@ -317,11 +324,14 @@ describe('getPotentialWords', () => {
         board[1][1].letter = "A"
         board[1][2].letter = "X"
         board[1][3].letter = "E"
-        const potentialWords = getPotentialWords(board, newWordCoordsArray, true)
+
+        board[2][3].letter = "L"
+
+        const potentialWords = getPotentialWords(board, newWordCoordsArray, false)
         const wordsToValidate = potentialWords.map((item) => item.word)
         const totalScore = potentialWords.reduce((sum, w) => sum + w.score, 0);
-        expect(wordsToValidate).toEqual(['AXE'])
-        expect(totalScore).toBe(20)
+        expect(wordsToValidate).toEqual(['AXE', 'EL'])
+        expect(totalScore).toBe(22)
 
     })
 
@@ -331,11 +341,14 @@ describe('getPotentialWords', () => {
         board[0][0].letter = "A"
         board[0][1].letter = "X"
         board[0][2].letter = "E"
-        const potentialWords = getPotentialWords(board, newWordCoordsArray, true)
+
+        board[1][2].letter = "T"
+
+        const potentialWords = getPotentialWords(board, newWordCoordsArray, false)
         const wordsToValidate = potentialWords.map((item) => item.word)
         const totalScore = potentialWords.reduce((sum, w) => sum + w.score, 0);
-        expect(wordsToValidate).toEqual(['AXE'])
-        expect(totalScore).toBe(30)
+        expect(wordsToValidate).toEqual(['AXE', 'ET'])
+        expect(totalScore).toBe(32)
 
     })
 
@@ -362,66 +375,114 @@ describe('getPotentialWords', () => {
 
 describe("getPotentialWords - placement validation", () => {
 
-    it("accepts a single-letter placement", () => {
+    test("rejects first move if it does not cover the center", () => {
         const board = createSquareBoardWithBonus(15)
-        board[5][5].letter = "A"
-        const result = getPotentialWords(board, [[5, 5]], true)
-        expect(result.length).toBeGreaterThanOrEqual(0) // should not error
+        // Place letters at (7,5) and (7,6) which are near center row,
+        // but do NOT include the true center (7,7)
+        board[7][5].letter = "H"
+        board[7][6].letter = "I"
+
+        const result = getPotentialWords(board, [[7, 5], [7, 6]], true)
+        expect(result).toEqual([])
     })
 
-    it("accepts horizontal continuous placement", () => {
+    test("accepts first move if it covers the center", () => {
+        const board = createSquareBoardWithBonus(15)
+        // Middle of a 15x15 board is (7,7)
+        board[7][7].letter = "A"
+        board[7][8].letter = "T"
+
+        const result = getPotentialWords(board, [[7, 7], [7, 8]], true)
+        expect(result.length).toBeGreaterThan(0)
+    })
+
+
+    test("accepts a single-letter placement as first move", () => {
+        const board = createSquareBoardWithBonus(15)
+        board[7][7].letter = "A"
+        const result = getPotentialWords(board, [[5, 5]], true)
+        expect(result.length).toBeGreaterThanOrEqual(0)
+    })
+
+    test("accepts a single-letter placement as a move after first", () => {
+        const board = createSquareBoardWithBonus(15)
+        board[7][7].letter = "A"
+
+        board[7][8].letter = "B"
+
+        const result = getPotentialWords(board, [[5, 5]], false)
+        expect(result.length).toBeGreaterThanOrEqual(0)
+    })
+
+    test("accepts horizontal continuous placement", () => {
         const board = createSquareBoardWithBonus(15)
         board[2][1].letter = "A"
         board[2][2].letter = "B"
         board[2][3].letter = "C"
-        const result = getPotentialWords(board, [[2, 1], [2, 2], [2, 3]], true)
+
+        board[2][4].letter = "D"
+
+        const result = getPotentialWords(board, [[2, 1], [2, 2], [2, 3]], false)
         expect(result.length).toBeGreaterThan(0)
     })
 
-    it("accepts vertical continuous placement", () => {
+    test("accepts vertical continuous placement", () => {
         const board = createSquareBoardWithBonus(15)
         board[1][4].letter = "A"
         board[2][4].letter = "B"
         board[3][4].letter = "C"
-        const result = getPotentialWords(board, [[1, 4], [2, 4], [3, 4]], true)
+
+        board[4][4].letter = "D"
+
+        const result = getPotentialWords(board, [[1, 4], [2, 4], [3, 4]], false)
         expect(result.length).toBeGreaterThan(0)
     })
 
-    it("rejects diagonal placement", () => {
+    test("rejects diagonal placement", () => {
         const board = createSquareBoardWithBonus(15)
         board[1][1].letter = "A"
         board[2][2].letter = "B"
         board[3][3].letter = "C"
-        const result = getPotentialWords(board, [[1, 1], [2, 2], [3, 3]], true)
+
+        board[0][1].letter = "D"
+
+        const result = getPotentialWords(board, [[1, 1], [2, 2], [3, 3]], false)
         expect(result).toEqual([])
     })
 
-    it("rejects gappy placement (missing cell)", () => {
+    test("rejects gappy placement (missing cell)", () => {
         const board = createSquareBoardWithBonus(15)
-        board[2][1].letter = "A"
-        board[2][3].letter = "B"
-        const result = getPotentialWords(board, [[2, 1], [2, 3]], true)
+        board[1][1].letter = "A"
+
+        board[2][1].letter = "B"
+        board[2][3].letter = "C"
+        const result = getPotentialWords(board, [[2, 1], [2, 3]], false)
         expect(result).toEqual([])
     })
 
-    it("rejects duplicate coordinates", () => {
+    test("rejects duplicate coordinates", () => {
         const board = createSquareBoardWithBonus(15)
         board[2][3].letter = "A"
         board[2][4].letter = "B"
-        const result = getPotentialWords(board, [[2, 3], [2, 3], [2, 4]], true)
+        board[2][5].letter = "C"
+
+        const result = getPotentialWords(board, [[2, 3], [2, 3], [2, 4]], false)
         expect(result).toEqual([])
     })
 
-    it("accepts unsorted input (normalizes with sort)", () => {
+    test("accepts unsorted input (normalizes with sort)", () => {
         const board = createSquareBoardWithBonus(15)
         board[2][1].letter = "A"
         board[2][2].letter = "B"
         board[2][3].letter = "C"
-        const result = getPotentialWords(board, [[2, 3], [2, 1], [2, 2]], true)
+
+        board[2][4].letter = "D"
+
+        const result = getPotentialWords(board, [[2, 3], [2, 1], [2, 2]], false)
         expect(result.length).toBeGreaterThan(0)
     })
 
-    it("rejects disconnected placements", () => {
+    test("rejects disconnected placements", () => {
         const board = createSquareBoardWithBonus(15)
         board[5][5].letter = "A"
         // Place letters away from the existing 'A'

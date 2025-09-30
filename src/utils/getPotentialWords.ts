@@ -38,6 +38,22 @@ export const getPotentialWords = (board: Square[][], coordinatesOfNewWord: numbe
         return [];
     }
 
+    // If it is first move then check the player has placed the word in the centre of the board.
+
+    if (isFirstMove) {
+        const middleRow = Math.floor(board.length / 2);
+        const middleCol = Math.floor(board[0].length / 2);
+
+        const coversMiddle = coordinatesOfNewWord.some(
+            ([row, col]) => row === middleRow && col === middleCol
+        );
+
+        if (!coversMiddle) {
+            return [];
+        }
+    }
+
+
     const crawlAndConstructStringAndCalculateWordScore = (board: Square[][], startRow: number, startCol: number, rowStep: number, colStep: number) => {
         let wordScoreTotal = 0
         let wordMultiplier = 1
