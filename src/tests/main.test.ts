@@ -3,7 +3,9 @@ import { exchangeTiles } from "../utils/exchangeTiles"
 import { shuffleBag } from "../utils/shuffleBag"
 import { getPotentialWords } from "../utils/getPotentialWords"
 import { createSquareBoardWithBonus } from "../utils/createSquareBoardWithBonus"
-import type { Square } from "../types/board"
+import { transferEndGamePoints } from '../utils/transferEndGamePoints';
+import type { PlayerInformation } from '../types/board';
+import { letterPoints } from '../constants/letterPoints';
 
 describe('drawTiles', () => {
     test('Returned bag should have 7 elements fewer if it had more than 7 to begin with', () => {
@@ -554,3 +556,58 @@ describe("getPotentialWords - placement validation", () => {
     })
 
 })
+
+describe('transferEndGamePoints', () => {
+  test('awards bonus to player who used all tiles', () => {
+    const players: PlayerInformation[] = [
+      { playerId: 1, tilesRack: ['A', 'B'], score: 10 },
+      { playerId: 2, tilesRack: [], score: 15 },
+      { playerId: 3, tilesRack: ['C'], score: 5 },
+    ];
+
+    const result = transferEndGamePoints(players);
+
+    // Player 1 loses tile points
+    expect(result.find(p => p.playerId === 1)?.score).toBe(10 - (letterPoints['A'] + letterPoints['B']));
+    // Player 2 gains total of remaining tiles (A+B+C)
+    const totalRemainingPoints = letterPoints['A'] + letterPoints['B'] + letterPoints['C'];
+    expect(result.find(p => p.playerId === 2)?.score).toBe(15 + totalRemainingPoints);
+    // Player 3 loses tile points
+    expect(result.find(p => p.playerId === 3)?.score).toBe(5 - letterPoints['C']);
+  });
+
+  test('handles no finisher correctly', () => {
+    const players: PlayerInformation[] = [
+      { playerId: 1, tilesRack: ['A'], score: 10 },
+      { playerId: 2, tilesRack: ['B'], score: 15 },
+    ];
+
+    const result = transferEndGamePoints(players);
+
+    expect(result.find(p => p.playerId === 1)?.score).toBe(10 - letterPoints['A']);
+    expect(result.find(p => p.playerId === 2)?.score).toBe(15 - letterPoints['B']);
+  });
+
+  test('handles all racks empty - this should never happen in a normal game', () => {
+    const players: PlayerInformation[] = [
+      { playerId: 1, tilesRack: [], score: 10 },
+      { playerId: 2, tilesRack: [], score: 15 },
+    ];
+
+    const result = transferEndGamePoints(players);
+
+    const totalPoints = 0; // all racks empty
+    expect(result.find(p => p.playerId === 1)?.score).toBe(10 + totalPoints);
+    expect(result.find(p => p.playerId === 2)?.score).toBe(15); // second player not finisher
+  });
+
+  test('handles single player finishing - this should never happen ', () => {
+    const players: PlayerInformation[] = [
+      { playerId: 1, tilesRack: [], score: 0 },
+    ];
+
+    const result = transferEndGamePoints(players);
+
+    expect(result[0].score).toBe(0); // no other tiles to add
+  });
+});
