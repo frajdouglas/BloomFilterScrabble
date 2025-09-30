@@ -1,6 +1,12 @@
 import type { Square } from "../types/board"
 import { letterPoints } from "../constants/letterPoints"
-export const getPotentialWords = (board: Square[][], coordinatesOfNewWord: number[][], isFirstMove: boolean): { word: string, score: number }[] => {
+
+
+type ValidationResult =
+    | { success: true; words: { word: string, score: number }[] }
+    | { success: false; error: string; }
+
+export const getPotentialWords = (board: Square[][], coordinatesOfNewWord: number[][], isFirstMove: boolean): ValidationResult => {
 
     // Check the word is only in a vertical or horizontal continuous placement
     const rows = coordinatesOfNewWord.map(([rowIndex]) => rowIndex).sort((a, b) => a - b);
@@ -9,11 +15,12 @@ export const getPotentialWords = (board: Square[][], coordinatesOfNewWord: numbe
     const allSameRow = new Set(rows).size === 1;
     const allSameCol = new Set(cols).size === 1;
 
-    if (!allSameRow && !allSameCol) return [];
+    if (!allSameRow && !allSameCol) return { success: false, error: 'Tiles must be placed in a single row or column' }
 
     for (let i = 0; i < rows.length - 1; i++) {
-        if (rows[i] - rows[i + 1] !== -1 && !allSameRow) return []
-        if (cols[i] - cols[i + 1] !== -1 && !allSameCol) return []
+        if ((rows[i] - rows[i + 1] !== -1 && !allSameRow) || (cols[i] - cols[i + 1] !== -1 && !allSameCol)) {
+            return { success: false, error: 'Tiles must be placed in a single row or column' }
+        }
     }
 
 
@@ -35,7 +42,7 @@ export const getPotentialWords = (board: Square[][], coordinatesOfNewWord: numbe
     });
 
     if (!hasConnection && !isFirstMove) {
-        return [];
+        return { success: false, error: 'Tiles must connect to existing words' }
     }
 
     // If it is first move then check the player has placed the word in the centre of the board.
@@ -49,7 +56,7 @@ export const getPotentialWords = (board: Square[][], coordinatesOfNewWord: numbe
         );
 
         if (!coversMiddle) {
-            return [];
+            return { success: false, error: 'First word must cover the center square' }
         }
     }
 
@@ -160,5 +167,5 @@ export const getPotentialWords = (board: Square[][], coordinatesOfNewWord: numbe
 
         }
     }
-    return wordsToValidate
+    return { success: true, words : wordsToValidate }
 }
