@@ -4,6 +4,7 @@ import { shuffleBag } from './utils/shuffleBag';
 import { drawTiles } from './utils/drawTiles';
 import { exchangeTiles } from './utils/exchangeTiles';
 import { getPotentialWords } from './utils/getPotentialWords';
+import { transferEndGamePoints } from './utils/transferEndGamePoints';
 import { createSquareBoardWithBonus } from './utils/createSquareBoardWithBonus';
 import type { Square, PlayerInformation } from './types/board';
 import { TileRack } from './components/TileRack';
@@ -22,6 +23,7 @@ interface BloomFilterMetadata {
 const App = () => {
   const bloomFilterRef = useRef<Uint8Array | null>(null);
   const metadataRef = useRef<BloomFilterMetadata | null>(null);
+  const turnNumber = useRef(1);
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(true);
   const [tileBag, setTileBag] = useState<string[]>([
@@ -57,9 +59,10 @@ const App = () => {
 
   const [activeTile, setActiveTile] = useState<string | null>(null);
   const [newLetterCoordinates, setNewLetterCoordinates] = useState<number[][]>([]);
-
+  const [validPendingWords, setValidPendingWords] = useState<{ word: string, score: number }[]>([]);
   const [gameState, setGameState] = useState({ playerTurn: 1, numOfPlayers: 2 })
-  const [PlayerInformation, setPlayerInformation] = useState<PlayerInformation[]>([{
+
+  const [playersInformation, setPlayersInformation] = useState<PlayerInformation[]>([{
     playerId: 1,
     score: 0,
     tilesRack: []
@@ -68,16 +71,16 @@ const App = () => {
     score: 0,
     tilesRack: []
   }]);
-  const [backupBoard, setBackupBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
-  const [backupPlayerInformation, setBackupPlayerInformation] = useState<PlayerInformation[]>([{
-    playerId: 1,
-    score: 0,
-    tilesRack: []
-  }, {
-    playerId: 2,
-    score: 0,
-    tilesRack: []
-  }]);
+  // const [backupBoard, setBackupBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
+  // const [backupPlayerInformation, setBackupPlayerInformation] = useState<PlayerInformation[]>([{
+  //   playerId: 1,
+  //   score: 0,
+  //   tilesRack: []
+  // }, {
+  //   playerId: 2,
+  //   score: 0,
+  //   tilesRack: []
+  // }]);
 
   useEffect(() => {
     const fetchBloomFilter = async () => {
@@ -102,7 +105,7 @@ const App = () => {
     }
     fetchBloomFilter()
   }, []);
-  console.log(tileBag, PlayerInformation)
+  // console.log(tileBag, playersInformation)
 
   const StartGame = () => {
     // Shuffle Tiles
@@ -144,7 +147,7 @@ const App = () => {
       newPlayers.push({ playerId: i, score: 0, tilesRack: newTileRack })
     }
 
-    setPlayerInformation(newPlayers)
+    setPlayersInformation(newPlayers)
     setTileBag(currentTileBag)
   }
 
@@ -158,8 +161,8 @@ const App = () => {
     board[0][3] = "U"
     board[0][4] = "R"
     board[0][5] = "N"
-    console.log(board, 'board for func')
-    getPotentialWords(board, newWordCoordsArray)
+    // console.log(board, 'board for func')
+    // getPotentialWords(board, newWordCoordsArray)
   }
 
   const handleExchange = () => {
@@ -168,36 +171,53 @@ const App = () => {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    console.log(over, active)
+    // console.log(over, active)
     if (!over || !over.data || !over.data.current) return; // dropped outside
     if (!active || !active.data || !active.data.current) return; // dropped outside
 
-    let tileDropXCoord = over.data.current.row
-    let tileDropYCoord = over.data.current.column
+    const tileDropXCoord = over.data.current.row
+    const tileDropYCoord = over.data.current.column
 
     if (board[tileDropXCoord][tileDropYCoord].letter) {
       return;
     }
 
-    let newLetter = active.data.current.letter
-    let tilesRackLetterIndexToRemove = active.data.current.originalIndex
-    let playerTurnId = gameState.playerTurn
-    let addedLetterCoordinates = [...newLetterCoordinates]
+    const isFirstTurn = turnNumber.current === 1
+    const newLetter = active.data.current.letter
+    const tilesRackLetterIndexToRemove = active.data.current.originalIndex
+    const playerTurnId = gameState.playerTurn
+    const addedLetterCoordinates = [...newLetterCoordinates]
     addedLetterCoordinates.push([tileDropXCoord, tileDropYCoord])
 
-    let boardCopy = [...board]
-    let rowToUpdate = [...boardCopy[tileDropXCoord]]
+    // Add the new letter to the board
+    const boardCopy = [...board]
+    const rowToUpdate = [...boardCopy[tileDropXCoord]]
     rowToUpdate[tileDropYCoord] = { ...rowToUpdate[tileDropYCoord], letter: newLetter }
     boardCopy[tileDropXCoord] = rowToUpdate
 
 
     // GetPotential Words call here
-    let wordsPreview = getPotentialWords(boardCopy, addedLetterCoordinates)
-    console.log(wordsPreview, 'words preview')
+    const wordsPreview = getPotentialWords(boardCopy, addedLetterCoordinates, isFirstTurn)
+    // console.log(wordsPreview, 'words preview')
+
+    // If there are words in the returned array, check if they all are valid english words - REFACTOR THIS 
+    let validWords: { word: string, score: number }[] = []
+    if (wordsPreview.success && wordsPreview.words.length > 0 && bloomFilterRef.current && metadataRef.current) {
+      for (let i = 0; i < wordsPreview.words.length; i++) {
+        const wordToCheck = wordsPreview.words[i].word
+        const isValidWord = checkWord(wordToCheck, bloomFilterRef.current, metadataRef.current.bitArraySize, metadataRef.current.seeds)
+        if (isValidWord) {
+          validWords.push(wordsPreview.words[i])
+        }
+      }
+    }
+    console.log(validWords, 'validWords')
+    // Set the valid words into state
+    setValidPendingWords(validWords)
     // Add to the new letter coordinates state as the player plays their letters
     setNewLetterCoordinates(addedLetterCoordinates)
     // Remove the tile from the player's tile rack
-    setPlayerInformation((prev) => {
+    setPlayersInformation((prev) => {
       const updatedPlayer = prev.map((player) => {
         if (player.playerId === playerTurnId) {
           const newTilesRack = [...player.tilesRack]
@@ -210,37 +230,66 @@ const App = () => {
     })
     // Update the board ui with the new letter 
     setBoard(boardCopy)
+
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    console.log('Drag started!');
+    // console.log('Drag started!');
     const data = event.active.data.current as { letter: string } | undefined;
     if (data) {
       setActiveTile(data.letter);
     }
   };
 
+  const handlePlayTiles = () => {
+    if (!validPendingWords.length) return;
+    const currentPlayer = playersInformation.find(p => p.playerId === gameState.playerTurn);
+    if (!currentPlayer) return;
 
-  const handleTurnPlay = () => {
+    const totalScoreToAdd = validPendingWords.reduce((sum, w) => sum + w.score, 0);
+    // Draw Tiles
+    const tilesToDraw = 7 - currentPlayer.tilesRack.length;
+    const { remainingTilesInBag, newTileRack } = drawTiles([...tileBag], [...currentPlayer.tilesRack], tilesToDraw);
 
-// Validate placements
+    // Add new tiles to player's rack and add score
+    const newPlayerInformation = playersInformation.map(player =>
+      player.playerId === gameState.playerTurn
+        ? { ...player, tilesRack: newTileRack, score: player.score + totalScoreToAdd }
+        : player
+    );
+
+    // Look for game end condition
+    if (remainingTilesInBag.length === 0 && newTileRack.length === 0) {
+      const finalPlayersInformation = transferEndGamePoints(newPlayerInformation)
+      console.log('GAME OVER', 'FINAL PLAYERS SCORES:', finalPlayersInformation)
+    }
+
+    // Increment turn number
+    turnNumber.current++;
+    setTileBag(remainingTilesInBag);
+    setPlayersInformation(newPlayerInformation);
+    // Clear new letter coordinates
+    setNewLetterCoordinates([]);
+    // Change player's turn
+    setGameState(prev => ({
+      ...prev,
+      playerTurn: prev.playerTurn === prev.numOfPlayers ? 1 : prev.playerTurn + 1
+    }));
 
 
-    // player has dragged a tile into a correct position. and selects submit
+  };
 
-    // valid words are calculated and total score is added to the playerinformation state
 
-    // Tiles are redrawn
 
-    // Game end is checked
+  const handleRemoveTile = () => {
 
-    // Backup Player Information and Board state is saved for invalid moves 
   }
+
 
   const handleDraw = () => {
     if (!tileBag) return
 
-    // const updatedPlayers = PlayerInformation.map((player) => {
+    // const updatedPlayers = playerInformation.map((player) => {
     //       const { remainingTilesInBag, newTileRack } = drawTiles(currentTileBag, player.tilesRack)
     //       currentTileBag = remainingTilesInBag
     //       return { ...player, tilesRack: newTileRack }
@@ -269,7 +318,7 @@ const App = () => {
     setText(query)
 
     const isValidWord = checkWord(query, bloomFilterRef.current, metadataRef.current?.bitArraySize, metadataRef.current.seeds)
-    console.log(isValidWord, query)
+    // console.log(isValidWord, query)
   }
 
   if (loading) {
@@ -279,8 +328,19 @@ const App = () => {
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <h1 className="text-3xl font-bold underline">
-        Hello world!
+        Player Turn: {gameState.playerTurn} Turn Number: {turnNumber.current}
       </h1>
+      <div>SCOREBOARD</div>
+      <div className="flex flex-col">
+        {playersInformation.length > 0 &&
+          playersInformation.map((player) => (
+            <div>
+              <div>Player Id: {player.playerId}</div>
+              <div>Total Score: {player.score}</div>
+            </div>
+          ))
+        }
+      </div>
       <input
         className="border border-gray-400 p-2 rounded w-full max-w-xs"
         onChange={(e) => handleCheckWord(e.target.value)}
@@ -295,8 +355,9 @@ const App = () => {
       <button onClick={() => { StartGame() }}>Start Game</button>
       <button onClick={() => { handleExchange() }}>Exchange</button>
       <button onClick={() => { handleTest() }}>Test Potential Words Function</button>
-
       <button onClick={() => { handleDraw() }}>Draw</button>
+      <button onClick={() => { handlePlayTiles() }}>Play Tiles</button>
+
       <div className="flex">
         {tileBag.length > 0 &&
           tileBag.map((item) => {
@@ -304,14 +365,13 @@ const App = () => {
           })}
       </div>
       <div className="flex flex-col">
-        {PlayerInformation.length > 0 &&
-          PlayerInformation.map((player) => (
+        {playersInformation.length > 0 &&
+          playersInformation.map((player) => (
             <TileRack player={player} />
           ))
         }
       </div>
       <Board board={board} />
-
     </DndContext>
   )
 }
