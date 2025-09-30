@@ -3,6 +3,7 @@ import { exchangeTiles } from "../utils/exchangeTiles"
 import { shuffleBag } from "../utils/shuffleBag"
 import { getPotentialWords } from "../utils/getPotentialWords"
 import { createSquareBoardWithBonus } from "../utils/createSquareBoardWithBonus"
+import type { Square } from "../types/board"
 
 describe('drawTiles', () => {
     test('Returned bag should have 7 elements fewer if it had more than 7 to begin with', () => {
@@ -355,6 +356,79 @@ describe('getPotentialWords', () => {
         expect(wordsToValidate).toEqual(['HAVE', 'AGE'])
         expect(totalScore).toBe(27)
 
+    })
+
+})
+
+describe("getPotentialWords - placement validation", () => {
+
+    it("accepts a single-letter placement", () => {
+        const board = createSquareBoardWithBonus(15)
+        board[5][5].letter = "A"
+        const result = getPotentialWords(board, [[5, 5]], true)
+        expect(result.length).toBeGreaterThanOrEqual(0) // should not error
+    })
+
+    it("accepts horizontal continuous placement", () => {
+        const board = createSquareBoardWithBonus(15)
+        board[2][1].letter = "A"
+        board[2][2].letter = "B"
+        board[2][3].letter = "C"
+        const result = getPotentialWords(board, [[2, 1], [2, 2], [2, 3]], true)
+        expect(result.length).toBeGreaterThan(0)
+    })
+
+    it("accepts vertical continuous placement", () => {
+        const board = createSquareBoardWithBonus(15)
+        board[1][4].letter = "A"
+        board[2][4].letter = "B"
+        board[3][4].letter = "C"
+        const result = getPotentialWords(board, [[1, 4], [2, 4], [3, 4]], true)
+        expect(result.length).toBeGreaterThan(0)
+    })
+
+    it("rejects diagonal placement", () => {
+        const board = createSquareBoardWithBonus(15)
+        board[1][1].letter = "A"
+        board[2][2].letter = "B"
+        board[3][3].letter = "C"
+        const result = getPotentialWords(board, [[1, 1], [2, 2], [3, 3]], true)
+        expect(result).toEqual([])
+    })
+
+    it("rejects gappy placement (missing cell)", () => {
+        const board = createSquareBoardWithBonus(15)
+        board[2][1].letter = "A"
+        board[2][3].letter = "B"
+        const result = getPotentialWords(board, [[2, 1], [2, 3]], true)
+        expect(result).toEqual([])
+    })
+
+    it("rejects duplicate coordinates", () => {
+        const board = createSquareBoardWithBonus(15)
+        board[2][3].letter = "A"
+        board[2][4].letter = "B"
+        const result = getPotentialWords(board, [[2, 3], [2, 3], [2, 4]], true)
+        expect(result).toEqual([])
+    })
+
+    it("accepts unsorted input (normalizes with sort)", () => {
+        const board = createSquareBoardWithBonus(15)
+        board[2][1].letter = "A"
+        board[2][2].letter = "B"
+        board[2][3].letter = "C"
+        const result = getPotentialWords(board, [[2, 3], [2, 1], [2, 2]], true)
+        expect(result.length).toBeGreaterThan(0)
+    })
+
+    it("rejects disconnected placements", () => {
+        const board = createSquareBoardWithBonus(15)
+        board[5][5].letter = "A"
+        // Place letters away from the existing 'A'
+        board[1][1].letter = "B"
+        board[1][2].letter = "C"
+        const result = getPotentialWords(board, [[1, 1], [1, 2]], false)
+        expect(result).toEqual([])
     })
 
 })

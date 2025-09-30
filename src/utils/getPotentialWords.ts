@@ -2,7 +2,22 @@ import type { Square } from "../types/board"
 import { letterPoints } from "../constants/letterPoints"
 export const getPotentialWords = (board: Square[][], coordinatesOfNewWord: number[][], isFirstMove: boolean): { word: string, score: number }[] => {
 
-  const hasConnection = coordinatesOfNewWord.some(([row, col]) => {
+    // Check the word is only in a vertical or horizontal continuous placement
+    const rows = coordinatesOfNewWord.map(([rowIndex]) => rowIndex).sort((a, b) => a - b);
+    const cols = coordinatesOfNewWord.map(([, columnIndex]) => columnIndex).sort((a, b) => a - b);
+
+    const allSameRow = new Set(rows).size === 1;
+    const allSameCol = new Set(cols).size === 1;
+
+    if (!allSameRow && !allSameCol) return [];
+
+    for (let i = 0; i < rows.length - 1; i++) {
+        if (rows[i] - rows[i + 1] !== -1 && !allSameRow) return []
+        if (cols[i] - cols[i + 1] !== -1 && !allSameCol) return []
+    }
+
+
+    const hasConnection = coordinatesOfNewWord.some(([row, col]) => {
         const neighbors = [
             [row - 1, col], // above
             [row + 1, col], // below
