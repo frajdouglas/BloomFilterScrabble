@@ -299,6 +299,7 @@ const App = () => {
 
     // Recompute validPendingWords
     const wordsPreview = getPotentialWords(newBoard, newCoords, isFirstTurn)
+
     let validWords: { word: string, score: number }[] = []
     if (wordsPreview.success && wordsPreview.words.length > 0 && bloomFilterRef.current && metadataRef.current) {
       for (let i = 0; i < wordsPreview.words.length; i++) {
@@ -313,6 +314,40 @@ const App = () => {
 
     setValidPendingWords(validWords)
   };
+
+ const handleRecall = () => {
+    // Recall all tiles from board back to rack
+    const currentPlayer = playersInformation.find(p => p.playerId === gameState.playerTurn);
+    if (!currentPlayer) return;
+
+    // Get all tiles from newLetterCoordinates
+    const tilesToRecall = newLetterCoordinates.map(([x, y]) => board[x][y].letter).filter((tile) => tile !== null)
+
+    // Remove tiles from board
+    const newBoard = board.map((row, rowIndex) =>
+      row.map((cell, colIndex) => {
+        if (newLetterCoordinates.some(([x, y]) => x === rowIndex && y === colIndex)) {
+          return { ...cell, letter: null };
+        }
+        return cell;
+      })
+    );
+
+    // Add tiles back to rack
+    setPlayersInformation(prev =>
+      prev.map(player =>
+        player.playerId === gameState.playerTurn
+          ? { ...player, tilesRack: [...player.tilesRack, ...tilesToRecall] }
+          : player
+      )
+    );
+
+    setBoard(newBoard);
+    setNewLetterCoordinates([]);
+    setValidPendingWords([]);
+  }
+
+
 
   if (loading) {
     return <div>Loading</div>
@@ -342,6 +377,7 @@ const App = () => {
       </select>
       <button onClick={() => { StartGame() }}>Start Game</button>
       <button onClick={() => { handleExchange() }}>Exchange</button>
+      <button onClick={() => { handleRecall() }}>Recall</button>
       <button onClick={() => { handlePlayTiles() }}>Play Tiles</button>
 
       <div className="flex">
