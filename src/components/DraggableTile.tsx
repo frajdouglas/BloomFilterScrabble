@@ -31,7 +31,7 @@ export const DraggableTile = ({ tile, index, playerId }: DraggableTileProps) => 
             style={style}              // Applies drag transform
             {...listeners}             // Enables drag events (mousedown, touchstart)
             {...attributes}            // Accessibility attributes
-            className="border p-2 w-8 h-8 flex items-center justify-center"
+            className="border p-2 aspect-square flex items-center justify-center"
         >
             {tile}
         </div>

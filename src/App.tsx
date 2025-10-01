@@ -11,6 +11,8 @@ import { TileRack } from './components/TileRack';
 import { DndContext } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { Board } from './components/Board';
+import { Sidebar } from './components/Sidebar';
+
 
 interface BloomFilterMetadata {
   bitArraySize: number,
@@ -23,6 +25,7 @@ const App = () => {
   const metadataRef = useRef<BloomFilterMetadata | null>(null);
   const turnNumber = useRef(1);
   const [loading, setLoading] = useState(true);
+  const [gameStarted, setGameStarted] = useState(false);
   const [tileBag, setTileBag] = useState<string[]>([
     "A", "A", "A", "A", "A", "A", "A", "A", "A",
     "B", "B",
@@ -50,7 +53,7 @@ const App = () => {
     "X",
     "Y", "Y",
     "Z",
-    "*", "*" // blanks
+    "*", "*"
   ])
   const [board, setBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
   const [activeTile, setActiveTile] = useState<string | null>(null);
@@ -92,8 +95,7 @@ const App = () => {
     fetchBloomFilter()
   }, []);
 
-  const StartGame = () => {
-    // Shuffle Tiles
+  const handleStartGame = () => {
     const unshuffledTileBag = [
       "A", "A", "A", "A", "A", "A", "A", "A", "A",
       "B", "B",
@@ -121,10 +123,9 @@ const App = () => {
       "X",
       "Y", "Y",
       "Z",
-      "*", "*" // blanks
+      "*", "*"
     ]
     let currentTileBag = shuffleBag(unshuffledTileBag)
-    // Set Number of Players
     let newPlayers = []
     for (let i = 1; i < gameState.numOfPlayers + 1; i++) {
       const { remainingTilesInBag, newTileRack } = drawTiles(currentTileBag, [], 7)
@@ -134,23 +135,20 @@ const App = () => {
 
     setPlayersInformation(newPlayers)
     setTileBag(currentTileBag)
+    setGameStarted(true)
   }
 
   const handleExchange = () => {
-    // Exchange is not a valid action once tile bag has fewer than 8 tiles
     if (tileBag.length < 8) {
       return;
     }
-
-    // Set pass counter to 0 as this is a valid move
     setConsecutivePasses(0)
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    // console.log(over, active)
-    if (!over || !over.data || !over.data.current) return; // dropped outside
-    if (!active || !active.data || !active.data.current) return; // dropped outside
+    if (!over || !over.data || !over.data.current) return;
+    if (!active || !active.data || !active.data.current) return;
 
     const tileDropXCoord = over.data.current.row
     const tileDropYCoord = over.data.current.column
@@ -166,18 +164,13 @@ const App = () => {
     const addedLetterCoordinates = [...newLetterCoordinates]
     addedLetterCoordinates.push([tileDropXCoord, tileDropYCoord])
 
-    // Add the new letter to the board
     const boardCopy = [...board]
     const rowToUpdate = [...boardCopy[tileDropXCoord]]
     rowToUpdate[tileDropYCoord] = { ...rowToUpdate[tileDropYCoord], letter: newLetter }
     boardCopy[tileDropXCoord] = rowToUpdate
 
-
-    // GetPotential Words call here
     const wordsPreview = getPotentialWords(boardCopy, addedLetterCoordinates, isFirstTurn)
-    // console.log(wordsPreview, 'words preview')
 
-    // If there are words in the returned array, check if they all are valid english words - REFACTOR THIS 
     let validWords: { word: string, score: number }[] = []
     if (wordsPreview.success && wordsPreview.words.length > 0 && bloomFilterRef.current && metadataRef.current) {
       for (let i = 0; i < wordsPreview.words.length; i++) {
@@ -188,12 +181,9 @@ const App = () => {
         }
       }
     }
-    console.log(validWords, 'validWords')
-    // Set the valid words into state
+
     setValidPendingWords(validWords)
-    // Add to the new letter coordinates state as the player plays their letters
     setNewLetterCoordinates(addedLetterCoordinates)
-    // Remove the tile from the player's tile rack
     setPlayersInformation((prev) => {
       const updatedPlayer = prev.map((player) => {
         if (player.playerId === playerTurnId) {
@@ -205,13 +195,10 @@ const App = () => {
       })
       return updatedPlayer
     })
-    // Update the board ui with the new letter 
     setBoard(boardCopy)
-
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    // console.log('Drag started!');
     const data = event.active.data.current as { letter: string } | undefined;
     if (data) {
       setActiveTile(data.letter);
@@ -221,15 +208,12 @@ const App = () => {
   const handlePlayTiles = () => {
     if (!validPendingWords.length) return;
 
-    // Set pass counter to 0 as this is a valid move
     setConsecutivePasses(0);
 
     const currentPlayer = playersInformation.find(p => p.playerId === gameState.playerTurn);
     if (!currentPlayer) return;
 
-    // Mark bonus tiles as used
     const newBoard = board.map((row, rowIndex) => {
-      // if row index is any of the coords x coords , create a copy of the row array and go deeper
       if (newLetterCoordinates.some((coords) => coords[0] === rowIndex)) {
         return row.map((cell, colIndex) => {
           if (newLetterCoordinates.some((coords) => coords[1] === colIndex && coords[0] === rowIndex)) {
@@ -241,41 +225,31 @@ const App = () => {
       return row
     })
 
-
     const totalScoreToAdd = validPendingWords.reduce((sum, w) => sum + w.score, 0);
-    // Draw Tiles
     const tilesToDraw = 7 - currentPlayer.tilesRack.length;
     const { remainingTilesInBag, newTileRack } = drawTiles([...tileBag], [...currentPlayer.tilesRack], tilesToDraw);
 
-    // Add new tiles to player's rack and add score
     const newPlayerInformation = playersInformation.map(player =>
       player.playerId === gameState.playerTurn
         ? { ...player, tilesRack: newTileRack, score: player.score + totalScoreToAdd }
         : player
     );
 
-    // Look for game end condition
     if (remainingTilesInBag.length === 0 && newTileRack.length === 0) {
       const finalPlayersInformation = transferEndGamePoints(newPlayerInformation)
       console.log('GAME OVER', 'FINAL PLAYERS SCORES:', finalPlayersInformation)
     }
 
-    // Increment turn number
     turnNumber.current++;
     setBoard(newBoard)
     setTileBag(remainingTilesInBag);
     setPlayersInformation(newPlayerInformation);
-    // Clear new letter coordinates
     setNewLetterCoordinates([]);
-    // Change player's turn
     setGameState(prev => ({
       ...prev,
       playerTurn: prev.playerTurn === prev.numOfPlayers ? 1 : prev.playerTurn + 1
     }));
-
-
   };
-
 
   const handleTileClick = (row: number, column: number, tile: string) => {
     const isCurrentTurnTile = newLetterCoordinates.some(
@@ -285,7 +259,6 @@ const App = () => {
 
     const isFirstTurn = turnNumber.current === 1
 
-    // Update board
     const newBoard = board.map((r, rowIndex) =>
       rowIndex === row
         ? r.map((cell, colIndex) =>
@@ -295,7 +268,6 @@ const App = () => {
     );
     setBoard(newBoard);
 
-    // Update player's rack
     setPlayersInformation(prev =>
       prev.map(player =>
         player.playerId === gameState.playerTurn
@@ -304,11 +276,9 @@ const App = () => {
       )
     );
 
-    // Update coordinates
     const newCoords = newLetterCoordinates.filter(([x, y]) => !(x === row && y === column));
     setNewLetterCoordinates(newCoords);
 
-    // Recompute validPendingWords
     const wordsPreview = getPotentialWords(newBoard, newCoords, isFirstTurn)
 
     let validWords: { word: string, score: number }[] = []
@@ -321,20 +291,16 @@ const App = () => {
         }
       }
     }
-    console.log(validWords, 'validWordsMew')
 
     setValidPendingWords(validWords)
   };
 
   const handleRecall = () => {
-    // Recall all tiles from board back to rack
     const currentPlayer = playersInformation.find(p => p.playerId === gameState.playerTurn);
     if (!currentPlayer) return;
 
-    // Get all tiles from newLetterCoordinates
     const tilesToRecall = newLetterCoordinates.map(([x, y]) => board[x][y].letter).filter((tile) => tile !== null)
 
-    // Remove tiles from board
     const newBoard = board.map((row, rowIndex) =>
       row.map((cell, colIndex) => {
         if (newLetterCoordinates.some(([x, y]) => x === rowIndex && y === colIndex)) {
@@ -344,7 +310,6 @@ const App = () => {
       })
     );
 
-    // Add tiles back to rack
     setPlayersInformation(prev =>
       prev.map(player =>
         player.playerId === gameState.playerTurn
@@ -361,7 +326,6 @@ const App = () => {
   const handlePass = () => {
     const newCount = consecutivePasses + 1;
 
-    // Check if everyone has passed twice
     if (newCount >= gameState.numOfPlayers * 2) {
       const finalPlayersInformation = transferEndGamePoints(playersInformation);
       console.log('GAME OVER - ALL PLAYERS PASSED TWICE', finalPlayersInformation);
@@ -370,7 +334,32 @@ const App = () => {
 
     setConsecutivePasses(newCount);
 
-    // Move to next player's turn
+    const currentPlayer = playersInformation.find(p => p.playerId === gameState.playerTurn);
+    if (!currentPlayer) return;
+
+    const tilesToRecall = newLetterCoordinates.map(([x, y]) => board[x][y].letter).filter((tile) => tile !== null)
+
+    const newBoard = board.map((row, rowIndex) =>
+      row.map((cell, colIndex) => {
+        if (newLetterCoordinates.some(([x, y]) => x === rowIndex && y === colIndex)) {
+          return { ...cell, letter: null };
+        }
+        return cell;
+      })
+    );
+
+    setPlayersInformation(prev =>
+      prev.map(player =>
+        player.playerId === gameState.playerTurn
+          ? { ...player, tilesRack: [...player.tilesRack, ...tilesToRecall] }
+          : player
+      )
+    );
+
+    setBoard(newBoard);
+    setNewLetterCoordinates([]);
+    setValidPendingWords([]);
+
     setGameState(prev => ({
       ...prev,
       playerTurn: prev.playerTurn === prev.numOfPlayers ? 1 : prev.playerTurn + 1
@@ -379,54 +368,61 @@ const App = () => {
     turnNumber.current++;
   };
 
-
+  const handleNumOfPlayersChange = (numPlayers: number) => {
+    setGameState(prev => ({ ...prev, numOfPlayers: numPlayers }));
+  };
 
   if (loading) {
-    return <div>Loading</div>
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-xl font-semibold text-gray-700">Loading...</div>
+      </div>
+    )
   }
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <h1 className="text-3xl font-bold underline">
-        Player Turn: {gameState.playerTurn} Turn Number: {turnNumber.current}
-      </h1>
-      <div>SCOREBOARD</div>
-      <div className="flex flex-col">
-        {playersInformation.length > 0 &&
-          playersInformation.map((player) => (
-            <div>
-              <div>Player Id: {player.playerId}</div>
-              <div>Total Score: {player.score}</div>
-            </div>
-          ))
-        }
-      </div>
-      <select value={gameState.numOfPlayers}
-        onChange={e => setGameState({ ...gameState, numOfPlayers: Number(e.target.value) })}>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-      </select>
-      <button onClick={() => { StartGame() }}>Start Game</button>
-      <button onClick={() => { handleExchange() }}>Exchange</button>
-      <button onClick={() => { handleRecall() }}>Recall</button>
-      <button onClick={() => { handlePlayTiles() }}>Play Tiles</button>
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar
+          gameState={gameState}
+          onNumOfPlayersChange={handleNumOfPlayersChange}
+          onStartGame={handleStartGame}
+          onExchange={handleExchange}
+          onPlayTiles={handlePlayTiles}
+          onRecall={handleRecall}
+          onPass={handlePass}
+          playersInformation={playersInformation}
+          tileBag={tileBag}
+          gameStarted={gameStarted}
+          validPendingWords={validPendingWords}
+        />
 
-      <div className="flex">
-        {tileBag.length > 0 &&
-          tileBag.map((item) => {
-            return <div>{item}</div>
-          })}
+        {/* Main Screen */}
+<main className="flex-1 flex flex-col p-6 gap-1">
+
+          {/* Tile Rack */}
+          {gameStarted && (
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold mb-3 text-gray-700">
+                Player {gameState.playerTurn}'s Tiles
+              </h3>
+              {playersInformation
+                .filter(player => player.playerId === gameState.playerTurn)
+                .map((player) => (
+                  <TileRack key={player.playerId} player={player} />
+                ))}
+            </div>
+          )}
+          {/* Board */}
+              {/* <div className="w-full max-w-[min(100vh-2rem,100vw-2rem)] aspect-square"> */}
+      {/* <div className="w-full h-full grid grid-cols-15 gap-[1px] bg-neutral-800 p-[1px] border-4 border-neutral-800 shadow-2xl">/</div> */}
+          <div className="flex items-center justify-center">
+            <Board board={board} onTileClick={handleTileClick} />
+          </div>
+                      {/* <Board board={board} onTileClick={handleTileClick} /> */}
+
+        </main>
       </div>
-      <div className="flex flex-col">
-        {playersInformation.length > 0 &&
-          playersInformation.map((player) => (
-            <TileRack player={player} />
-          ))
-        }
-      </div>
-      <Board board={board} onTileClick={handleTileClick}
-      />
     </DndContext>
   )
 }

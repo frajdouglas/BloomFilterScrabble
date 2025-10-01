@@ -7,30 +7,33 @@ interface BoardProps {
 }
 
 export const Board = ({ board, onTileClick }: BoardProps) => {
-  return (
-    <div
-      className="grid gap-0.5"
-      style={{ gridTemplateColumns: `repeat(${board[0].length}, minmax(0, 1fr))` }}
-    >
-      {board.flat().map((square, idx) => {
-        const row = Math.floor(idx / board[0].length);
-        const column = idx % board[0].length;
+  const size = board.length; // 15
 
-        return (
-          <Tile
-            key={idx}
-            tileContent={square.letter}
-            bonusTileContent={square.bonus}
-            row={row}
-            column={column}
-            onClick={() => {
-              if (square.letter) {
-                onTileClick(row, column, square.letter)
-              }
-            }}
-          />
-        );
-      })}
+  return (
+
+        <div
+          className="grid gap-0.5"
+          style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
+        >
+          {board.flat().map((square, idx) => {
+            const row = Math.floor(idx / size);
+            const column = idx % size;
+
+            return (
+              <Tile
+                key={idx}
+                tileContent={square.letter}
+                bonusTileContent={square.bonus}
+                row={row}
+                column={column}
+                onClick={() => {
+                  if (square.letter) {
+                    onTileClick(row, column, square.letter);
+                  }
+                }}
+              />
+            );
+          })}
     </div>
   );
 };
