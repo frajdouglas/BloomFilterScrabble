@@ -55,6 +55,7 @@ const App = () => {
   const [board, setBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
   const [activeTile, setActiveTile] = useState<string | null>(null);
   const [newLetterCoordinates, setNewLetterCoordinates] = useState<number[][]>([]);
+  const [consecutivePasses, setConsecutivePasses] = useState(0);
   const [validPendingWords, setValidPendingWords] = useState<{ word: string, score: number }[]>([]);
   const [gameState, setGameState] = useState({ playerTurn: 1, numOfPlayers: 2 })
   const [playersInformation, setPlayersInformation] = useState<PlayerInformation[]>([{
@@ -136,7 +137,13 @@ const App = () => {
   }
 
   const handleExchange = () => {
+    // Exchange is not a valid action once tile bag has fewer than 8 tiles
+    if (tileBag.length < 8) {
+      return;
+    }
 
+    // Set pass counter to 0 as this is a valid move
+    setConsecutivePasses(0)
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -213,6 +220,10 @@ const App = () => {
 
   const handlePlayTiles = () => {
     if (!validPendingWords.length) return;
+
+    // Set pass counter to 0 as this is a valid move
+    setConsecutivePasses(0);
+
     const currentPlayer = playersInformation.find(p => p.playerId === gameState.playerTurn);
     if (!currentPlayer) return;
 
@@ -315,7 +326,7 @@ const App = () => {
     setValidPendingWords(validWords)
   };
 
- const handleRecall = () => {
+  const handleRecall = () => {
     // Recall all tiles from board back to rack
     const currentPlayer = playersInformation.find(p => p.playerId === gameState.playerTurn);
     if (!currentPlayer) return;
@@ -346,6 +357,27 @@ const App = () => {
     setNewLetterCoordinates([]);
     setValidPendingWords([]);
   }
+
+  const handlePass = () => {
+    const newCount = consecutivePasses + 1;
+
+    // Check if everyone has passed twice
+    if (newCount >= gameState.numOfPlayers * 2) {
+      const finalPlayersInformation = transferEndGamePoints(playersInformation);
+      console.log('GAME OVER - ALL PLAYERS PASSED TWICE', finalPlayersInformation);
+      return;
+    }
+
+    setConsecutivePasses(newCount);
+
+    // Move to next player's turn
+    setGameState(prev => ({
+      ...prev,
+      playerTurn: prev.playerTurn === prev.numOfPlayers ? 1 : prev.playerTurn + 1
+    }));
+
+    turnNumber.current++;
+  };
 
 
 
