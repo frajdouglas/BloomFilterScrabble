@@ -18,13 +18,10 @@ interface BloomFilterMetadata {
   seeds: number[]
 }
 
-
-
 const App = () => {
   const bloomFilterRef = useRef<Uint8Array | null>(null);
   const metadataRef = useRef<BloomFilterMetadata | null>(null);
   const turnNumber = useRef(1);
-  const [text, setText] = useState('')
   const [loading, setLoading] = useState(true);
   const [tileBag, setTileBag] = useState<string[]>([
     "A", "A", "A", "A", "A", "A", "A", "A", "A",
@@ -56,12 +53,10 @@ const App = () => {
     "*", "*" // blanks
   ])
   const [board, setBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
-
   const [activeTile, setActiveTile] = useState<string | null>(null);
   const [newLetterCoordinates, setNewLetterCoordinates] = useState<number[][]>([]);
   const [validPendingWords, setValidPendingWords] = useState<{ word: string, score: number }[]>([]);
   const [gameState, setGameState] = useState({ playerTurn: 1, numOfPlayers: 2 })
-
   const [playersInformation, setPlayersInformation] = useState<PlayerInformation[]>([{
     playerId: 1,
     score: 0,
@@ -71,16 +66,6 @@ const App = () => {
     score: 0,
     tilesRack: []
   }]);
-  // const [backupBoard, setBackupBoard] = useState<Square[][]>(createSquareBoardWithBonus(15));
-  // const [backupPlayerInformation, setBackupPlayerInformation] = useState<PlayerInformation[]>([{
-  //   playerId: 1,
-  //   score: 0,
-  //   tilesRack: []
-  // }, {
-  //   playerId: 2,
-  //   score: 0,
-  //   tilesRack: []
-  // }]);
 
   useEffect(() => {
     const fetchBloomFilter = async () => {
@@ -105,7 +90,6 @@ const App = () => {
     }
     fetchBloomFilter()
   }, []);
-  // console.log(tileBag, playersInformation)
 
   const StartGame = () => {
     // Shuffle Tiles
@@ -149,20 +133,6 @@ const App = () => {
 
     setPlayersInformation(newPlayers)
     setTileBag(currentTileBag)
-  }
-
-  const handleTest = () => {
-    const newWordCoordsArray = [[0, 2], [0, 3], [0, 4], [0, 5]]
-    const board = Array.from({ length: 15 }, () => Array(15).fill(null))
-
-    board[0][0] = "R"
-    board[0][1] = "E"
-    board[0][2] = "T"
-    board[0][3] = "U"
-    board[0][4] = "R"
-    board[0][5] = "N"
-    // console.log(board, 'board for func')
-    // getPotentialWords(board, newWordCoordsArray)
   }
 
   const handleExchange = () => {
@@ -240,11 +210,28 @@ const App = () => {
       setActiveTile(data.letter);
     }
   };
+  console.log(board, 'BOARD')
+  console.log(newLetterCoordinates, 'newLetterCoordinates')
 
   const handlePlayTiles = () => {
     if (!validPendingWords.length) return;
     const currentPlayer = playersInformation.find(p => p.playerId === gameState.playerTurn);
     if (!currentPlayer) return;
+
+    // Mark bonus tiles as used
+    const newBoard = board.map((row, rowIndex) => {
+      // if row index is any of the coords x coords , create a copy of the row array and go deeper
+      if (newLetterCoordinates.some((coords) => coords[0] === rowIndex)) {
+        return row.map((cell, colIndex) => {
+          if (newLetterCoordinates.some((coords) => coords[1] === colIndex && coords[0] === rowIndex)) {
+            return { ...cell, used: true }
+          }
+          return cell
+        })
+      }
+      return row
+    })
+
 
     const totalScoreToAdd = validPendingWords.reduce((sum, w) => sum + w.score, 0);
     // Draw Tiles
@@ -266,6 +253,7 @@ const App = () => {
 
     // Increment turn number
     turnNumber.current++;
+    setBoard(newBoard)
     setTileBag(remainingTilesInBag);
     setPlayersInformation(newPlayerInformation);
     // Clear new letter coordinates
@@ -278,48 +266,6 @@ const App = () => {
 
 
   };
-
-
-
-  const handleRemoveTile = () => {
-
-  }
-
-
-  const handleDraw = () => {
-    if (!tileBag) return
-
-    // const updatedPlayers = playerInformation.map((player) => {
-    //       const { remainingTilesInBag, newTileRack } = drawTiles(currentTileBag, player.tilesRack)
-    //       currentTileBag = remainingTilesInBag
-    //       return { ...player, tilesRack: newTileRack }
-    //     })
-
-
-
-    // let currentPlayersTiles = [...playersTiles.playerOne]
-    // let currentTileBag = [...tileBag]
-
-    // while (currentPlayersTiles.length < 7 && currentTileBag.length > 0) {
-    //   const newTileFromBag = currentTileBag.pop()
-    //   if (newTileFromBag !== undefined) {
-    //     currentPlayersTiles.push(newTileFromBag)
-    //   }
-    // }
-    // setPlayersTiles({ ...playersTiles, playerOne: currentPlayersTiles })
-    // setTileBag(currentTileBag)
-  }
-
-  const handleCheckWord = (query: string) => {
-    if (!bloomFilterRef.current || !metadataRef.current) {
-      return
-    }
-
-    setText(query)
-
-    const isValidWord = checkWord(query, bloomFilterRef.current, metadataRef.current?.bitArraySize, metadataRef.current.seeds)
-    // console.log(isValidWord, query)
-  }
 
   if (loading) {
     return <div>Loading</div>
@@ -341,11 +287,6 @@ const App = () => {
           ))
         }
       </div>
-      <input
-        className="border border-gray-400 p-2 rounded w-full max-w-xs"
-        onChange={(e) => handleCheckWord(e.target.value)}
-        value={text}
-      />
       <select value={gameState.numOfPlayers}
         onChange={e => setGameState({ ...gameState, numOfPlayers: Number(e.target.value) })}>
         <option value="2">2</option>
@@ -354,8 +295,6 @@ const App = () => {
       </select>
       <button onClick={() => { StartGame() }}>Start Game</button>
       <button onClick={() => { handleExchange() }}>Exchange</button>
-      <button onClick={() => { handleTest() }}>Test Potential Words Function</button>
-      <button onClick={() => { handleDraw() }}>Draw</button>
       <button onClick={() => { handlePlayTiles() }}>Play Tiles</button>
 
       <div className="flex">
