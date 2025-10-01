@@ -6,9 +6,10 @@ interface TileProps {
   bonusTileContent: string | null;
   row: number;
   column: number;
+  onClick: () => void
 }
 
-export const Tile = ({ tileContent, bonusTileContent, row, column }: TileProps) => {
+export const Tile = ({ tileContent, bonusTileContent, row, column, onClick }: TileProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: `cell-${row}-${column}`,
     data: {
@@ -26,7 +27,7 @@ export const Tile = ({ tileContent, bonusTileContent, row, column }: TileProps) 
   return (
     <div
       ref={setNodeRef}
-
+      onClick={onClick}
       className={`${isOver ? 'ring-2 ring-green-500 bg-green-200' : ''} aspect-square border border-gray-400 flex items-center justify-center text-lg font-bold select-none ${isBonus(bonusTileContent) ? bonusColour[bonusTileContent] : ""
         }`}
     >

@@ -210,8 +210,6 @@ const App = () => {
       setActiveTile(data.letter);
     }
   };
-  console.log(board, 'BOARD')
-  console.log(newLetterCoordinates, 'newLetterCoordinates')
 
   const handlePlayTiles = () => {
     if (!validPendingWords.length) return;
@@ -267,6 +265,55 @@ const App = () => {
 
   };
 
+
+  const handleTileClick = (row: number, column: number, tile: string) => {
+    const isCurrentTurnTile = newLetterCoordinates.some(
+      ([x, y]) => x === row && y === column
+    );
+    if (!isCurrentTurnTile) return;
+
+    const isFirstTurn = turnNumber.current === 1
+
+    // Update board
+    const newBoard = board.map((r, rowIndex) =>
+      rowIndex === row
+        ? r.map((cell, colIndex) =>
+          colIndex === column ? { ...cell, letter: null } : cell
+        )
+        : r
+    );
+    setBoard(newBoard);
+
+    // Update player's rack
+    setPlayersInformation(prev =>
+      prev.map(player =>
+        player.playerId === gameState.playerTurn
+          ? { ...player, tilesRack: [...player.tilesRack, tile] }
+          : player
+      )
+    );
+
+    // Update coordinates
+    const newCoords = newLetterCoordinates.filter(([x, y]) => !(x === row && y === column));
+    setNewLetterCoordinates(newCoords);
+
+    // Recompute validPendingWords
+    const wordsPreview = getPotentialWords(newBoard, newCoords, isFirstTurn)
+    let validWords: { word: string, score: number }[] = []
+    if (wordsPreview.success && wordsPreview.words.length > 0 && bloomFilterRef.current && metadataRef.current) {
+      for (let i = 0; i < wordsPreview.words.length; i++) {
+        const wordToCheck = wordsPreview.words[i].word
+        const isValidWord = checkWord(wordToCheck, bloomFilterRef.current, metadataRef.current.bitArraySize, metadataRef.current.seeds)
+        if (isValidWord) {
+          validWords.push(wordsPreview.words[i])
+        }
+      }
+    }
+    console.log(validWords, 'validWordsMew')
+
+    setValidPendingWords(validWords)
+  };
+
   if (loading) {
     return <div>Loading</div>
   }
@@ -310,7 +357,8 @@ const App = () => {
           ))
         }
       </div>
-      <Board board={board} />
+      <Board board={board} onTileClick={handleTileClick}
+      />
     </DndContext>
   )
 }
