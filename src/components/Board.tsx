@@ -12,7 +12,7 @@ export const Board = ({ board, onTileClick }: BoardProps) => {
   return (
 
     <div
-      className="grid bg-[#008f3b] font-bold"
+      className="grid bg-[#008f3b]"
       style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 40px))` }}
 
     >
