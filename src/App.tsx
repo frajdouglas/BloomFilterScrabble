@@ -374,7 +374,7 @@ const App = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
+      <div className="flex items-center justify-center h-screen">
         <div className="text-xl font-semibold text-gray-700">Loading...</div>
       </div>
     )
@@ -382,7 +382,7 @@ const App = () => {
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex h-screen bg-gray-50">
+      <div className="flex h-screen">
         <Sidebar
           gameState={gameState}
           onNumOfPlayersChange={handleNumOfPlayersChange}

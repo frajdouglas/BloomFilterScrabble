@@ -1,7 +1,7 @@
 import React from 'react';
 import type { PlayerInformation } from '../types/board';
 import { Code2, Briefcase } from 'lucide-react';
-import { TileRack } from './TileRack';
+
 interface SidebarProps {
     gameState: { playerTurn: number; numOfPlayers: number };
     onNumOfPlayersChange: (num: number) => void;
