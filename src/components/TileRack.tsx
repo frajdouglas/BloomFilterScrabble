@@ -7,7 +7,7 @@ interface TileRackProps {
 
 export const TileRack = ({ player }: TileRackProps) => {
     return (
-        <div key={player.playerId} className="flex space-x-1">
+        <div key={player.playerId} className="flex gap-1">
             {player.tilesRack.map((tile, idx) => (
                 <DraggableTile
                     key={idx}

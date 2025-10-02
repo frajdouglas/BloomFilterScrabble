@@ -1,6 +1,7 @@
 import React from 'react';
 import type { PlayerInformation } from '../types/board';
 import { Code2, Briefcase } from 'lucide-react';
+import { TileRack } from './TileRack';
 interface SidebarProps {
     gameState: { playerTurn: number; numOfPlayers: number };
     onNumOfPlayersChange: (num: number) => void;
@@ -31,7 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return (
         <aside className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col gap-4">
             {/* Social Links */}
-            <div className="flex gap-2">
+            <div className="flex gap-1">
                 <a
                     href="https://github.com/frajdouglas/BloomFilterScrabble"
                     target="_blank"

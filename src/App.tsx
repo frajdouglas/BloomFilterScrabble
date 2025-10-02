@@ -396,16 +396,11 @@ const App = () => {
           gameStarted={gameStarted}
           validPendingWords={validPendingWords}
         />
-
         {/* Main Screen */}
-<main className="flex-1 flex flex-col p-6 gap-1">
-
+        <main className="flex flex-col items-center mt-4 w-full">
           {/* Tile Rack */}
           {gameStarted && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <h3 className="text-sm font-semibold mb-3 text-gray-700">
-                Player {gameState.playerTurn}'s Tiles
-              </h3>
+            <div className="flex items-center justify-center w-full p-2">
               {playersInformation
                 .filter(player => player.playerId === gameState.playerTurn)
                 .map((player) => (
@@ -413,14 +408,9 @@ const App = () => {
                 ))}
             </div>
           )}
-          {/* Board */}
-              {/* <div className="w-full max-w-[min(100vh-2rem,100vw-2rem)] aspect-square"> */}
-      {/* <div className="w-full h-full grid grid-cols-15 gap-[1px] bg-neutral-800 p-[1px] border-4 border-neutral-800 shadow-2xl">/</div> */}
-          <div className="flex items-center justify-center">
+          <div className="aspect-square">
             <Board board={board} onTileClick={handleTileClick} />
           </div>
-                      {/* <Board board={board} onTileClick={handleTileClick} /> */}
-
         </main>
       </div>
     </DndContext>

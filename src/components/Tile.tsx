@@ -22,7 +22,8 @@ export const Tile = ({ tileContent, bonusTileContent, row, column, onClick }: Ti
     <div
       ref={setNodeRef}
       onClick={onClick}
-      className={`w-full aspect-square border border-gray-400 flex items-center justify-center 
+      // className={`w-full aspect-square border border-gray-400 flex items-center justify-center 
+      className={` aspect-square border border-gray-400 flex items-center justify-center 
         
         ${isOver ? 'ring-2 ring-green-500 bg-green-200' : ''} 
         ${isBonus(bonusTileContent) ? bonusColour[bonusTileContent] : ''}`}
