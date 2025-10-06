@@ -96,13 +96,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         >
                             Recall
                         </button>
-                        <button
+                        {/* <button
                             onClick={onExchange}
                             disabled={tileBag.length < 8}
                             className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
                         >
                             Exchange
                         </button>
+                        */}
                         <button
                             onClick={onPass}
                             className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium"
