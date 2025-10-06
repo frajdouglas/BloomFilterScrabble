@@ -127,7 +127,7 @@ const App = () => {
       "X",
       "Y", "Y",
       "Z",
-      "*", "*"
+      // "*", "*"
     ]
     let currentTileBag = shuffleBag(unshuffledTileBag)
     let newPlayers = []
