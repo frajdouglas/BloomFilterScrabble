@@ -291,22 +291,22 @@ describe('getPotentialWords', () => {
     })
 
     test('Correct score counts with no bonuses', () => {
-        const newWordCoordsArray = [[4, 8], [4, 9], [4, 10], [4, 11]]
+        const newWordCoordsArray = [[5, 6], [5, 7], [5, 8]]
         const board = createSquareBoardWithBonus(15)
 
-        board[3][8].letter = "A"
+        board[4][6].letter = "I"
 
-        board[4][8].letter = "T"
-        board[4][9].letter = "U"
-        board[4][10].letter = "R"
-        board[4][11].letter = "N"
+        board[5][6].letter = "N"
+        board[5][7].letter = "O"
+        board[5][8].letter = "W"
         const result = getPotentialWords(board, newWordCoordsArray, false)
+        console.log(result)
         expect(result.success).toBe(true)
         if (result.success) {
             const wordsToValidate = result.words.map((item) => item.word)
             const totalScore = result.words.reduce((sum, w) => sum + w.score, 0);
-            expect(wordsToValidate).toEqual(['TURN', 'AT'])
-            expect(totalScore).toBe(6)
+            expect(wordsToValidate).toEqual(['NOW', 'IN'])
+            expect(totalScore).toBe(8)
         }
     })
 
@@ -396,14 +396,15 @@ describe('getPotentialWords', () => {
 
         board[4][8].letter = "G"
         board[4][9].letter = "E"
+        board[4][10].letter = "D"
 
         const result = getPotentialWords(board, newWordCoordsArray, false)
         expect(result.success).toBe(true)
         if (result.success) {
             const wordsToValidate = result.words.map((item) => item.word)
             const totalScore = result.words.reduce((sum, w) => sum + w.score, 0);
-            expect(wordsToValidate).toEqual(['HAVE', 'AGE'])
-            expect(totalScore).toBe(27)
+            expect(wordsToValidate).toEqual(['HAVE', 'AGED'])
+            expect(totalScore).toBe(26)
         }
     })
 
