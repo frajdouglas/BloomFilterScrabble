@@ -6,7 +6,7 @@ import { exchangeTiles } from './utils/exchangeTiles';
 import { getPotentialWords } from './utils/getPotentialWords';
 import { transferEndGamePoints } from './utils/transferEndGamePoints';
 import { createSquareBoardWithBonus } from './utils/createSquareBoardWithBonus';
-import type { Square, PlayerInformation } from './types/board';
+import type { Square, PlayerInformation, GameState } from './types/board';
 import { TileRack } from './components/TileRack';
 import { DndContext } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
@@ -25,7 +25,6 @@ const App = () => {
   const metadataRef = useRef<BloomFilterMetadata | null>(null);
   const turnNumber = useRef(1);
   const [loading, setLoading] = useState(true);
-  const [gameStarted, setGameStarted] = useState(false);
   const [tileBag, setTileBag] = useState<string[]>([
     "A", "A", "A", "A", "A", "A", "A", "A", "A",
     "B", "B",
@@ -60,7 +59,12 @@ const App = () => {
   const [newLetterCoordinates, setNewLetterCoordinates] = useState<number[][]>([]);
   const [consecutivePasses, setConsecutivePasses] = useState(0);
   const [validPendingWords, setValidPendingWords] = useState<{ word: string, score: number }[]>([]);
-  const [gameState, setGameState] = useState({ playerTurn: 1, numOfPlayers: 2 })
+  const [gameState, setGameState] = useState<GameState>({
+    isStarted: false,
+    outcome: null,
+    playerTurn: 1,
+    numOfPlayers: 2,
+  })
   const [playersInformation, setPlayersInformation] = useState<PlayerInformation[]>([{
     playerId: 1,
     score: 0,
@@ -135,7 +139,10 @@ const App = () => {
 
     setPlayersInformation(newPlayers)
     setTileBag(currentTileBag)
-    setGameStarted(true)
+    setGameState(prev => ({
+      ...prev,
+      isStarted: true
+    }));
   }
 
   const handleExchange = () => {
@@ -144,7 +151,6 @@ const App = () => {
     }
     setConsecutivePasses(0)
   }
-
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || !over.data || !over.data.current) return;
@@ -170,7 +176,7 @@ const App = () => {
     boardCopy[tileDropXCoord] = rowToUpdate
 
     const wordsPreview = getPotentialWords(boardCopy, addedLetterCoordinates, isFirstTurn)
-
+console.log(wordsPreview)
     let validWords: { word: string, score: number }[] = []
     if (wordsPreview.success && wordsPreview.words.length > 0 && bloomFilterRef.current && metadataRef.current) {
       for (let i = 0; i < wordsPreview.words.length; i++) {
@@ -213,6 +219,7 @@ const App = () => {
     const currentPlayer = playersInformation.find(p => p.playerId === gameState.playerTurn);
     if (!currentPlayer) return;
 
+    // Mark used bonus board tiles as used
     const newBoard = board.map((row, rowIndex) => {
       if (newLetterCoordinates.some((coords) => coords[0] === rowIndex)) {
         return row.map((cell, colIndex) => {
@@ -237,7 +244,16 @@ const App = () => {
 
     if (remainingTilesInBag.length === 0 && newTileRack.length === 0) {
       const finalPlayersInformation = transferEndGamePoints(newPlayerInformation)
-      console.log('GAME OVER', 'FINAL PLAYERS SCORES:', finalPlayersInformation)
+      const maxScore = Math.max(...finalPlayersInformation.map(p => p.score));
+      const winners = finalPlayersInformation.filter(p => p.score === maxScore);
+
+      setGameState(prev => ({
+        ...prev,
+        status: 'finished',
+        outcome: winners.length > 1
+          ? 'draw'
+          : { winnerId: winners[0].playerId }
+      }));
     }
 
     turnNumber.current++;
@@ -327,9 +343,15 @@ const App = () => {
     const newCount = consecutivePasses + 1;
 
     if (newCount >= gameState.numOfPlayers * 2) {
-      const finalPlayersInformation = transferEndGamePoints(playersInformation);
-      console.log('GAME OVER - ALL PLAYERS PASSED TWICE', finalPlayersInformation);
-      return;
+      const maxScore = Math.max(...playersInformation.map(p => p.score));
+      const winners = playersInformation.filter(p => p.score === maxScore);
+      setGameState(prev => ({
+        ...prev,
+        status: 'finished',
+        outcome: winners.length > 1
+          ? 'draw'
+          : { winnerId: winners[0].playerId }
+      })); return;
     }
 
     setConsecutivePasses(newCount);
@@ -393,19 +415,29 @@ const App = () => {
           onPass={handlePass}
           playersInformation={playersInformation}
           tileBag={tileBag}
-          gameStarted={gameStarted}
           validPendingWords={validPendingWords}
         />
         {/* Main Screen */}
         <main className="flex flex-col items-center mt-4 w-full">
           {/* Tile Rack */}
-          {gameStarted && (
+          {gameState.isStarted && (
             <div className="flex items-center justify-center w-full p-2">
               {playersInformation
                 .filter(player => player.playerId === gameState.playerTurn)
                 .map((player) => (
                   <TileRack key={player.playerId} player={player} />
                 ))}
+            </div>
+          )}
+
+          {/* Winner/Draw UI */}
+          {gameState.outcome && (
+            <div className="mt-2 text-lg font-semibold text-gray-800">
+              {gameState.outcome === 'draw' ? (
+                <span>It’s a draw!</span>
+              ) : (
+                <span>🎉 Player {gameState.outcome.winnerId} wins!</span>
+              )}
             </div>
           )}
           <div className="aspect-square">

@@ -1,9 +1,9 @@
 import React from 'react';
 import type { PlayerInformation } from '../types/board';
 import { Code2, Briefcase } from 'lucide-react';
-
+import type { GameState } from '../types/board';
 interface SidebarProps {
-    gameState: { playerTurn: number; numOfPlayers: number };
+    gameState: GameState;
     onNumOfPlayersChange: (num: number) => void;
     onStartGame: () => void;
     onExchange: () => void;
@@ -12,7 +12,6 @@ interface SidebarProps {
     onPass: () => void;
     playersInformation: PlayerInformation[];
     tileBag: string[];
-    gameStarted: boolean;
     validPendingWords: { word: string; score: number }[];
 }
 
@@ -26,7 +25,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onPass,
     playersInformation,
     tileBag,
-    gameStarted,
     validPendingWords
 }) => {
     return (
@@ -54,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </a></div>
 
             {/* Game Setup */}
-            {!gameStarted && (
+            {!gameState.isStarted && (
                 <div className="border border-gray-300 rounded-lg p-4">
                     <h3 className="text-sm font-semibold mb-3 text-gray-700">Game Setup</h3>
                     <div className="flex flex-col gap-2">
@@ -79,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             {/* Actions */}
-            {gameStarted && (
+            {gameState.isStarted && (
                 <div className="border border-gray-300 rounded-lg p-4">
                     <h3 className="text-sm font-semibold mb-3 text-gray-700">Actions</h3>
                     <div className="grid grid-cols-2 gap-2">
@@ -115,7 +113,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             {/* Tiles Remaining */}
-            {gameStarted && (
+            {gameState.isStarted && (
                 <div className="border border-gray-300 rounded-lg p-4">
                     <h3 className="text-sm font-semibold mb-2 text-gray-700">Tiles Remaining</h3>
                     <div className="text-2xl font-bold text-center text-gray-800">{tileBag.length}</div>
@@ -123,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             {/* Leaderboard */}
-            {gameStarted && (
+            {gameState.isStarted && (
                 <div className="border border-gray-300 rounded-lg p-4 flex-1 overflow-auto">
                     <h3 className="text-sm font-semibold mb-3 text-gray-700">Leaderboard</h3>
                     <div className="flex flex-col gap-2">
