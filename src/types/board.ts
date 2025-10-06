@@ -11,3 +11,10 @@ export interface PlayerInformation {
   score: number,
   tilesRack: string[]
 }
+
+export interface GameState {
+  isStarted : boolean;
+  outcome: 'draw' | { winnerId: number } | null;
+  playerTurn: number;
+  numOfPlayers: number;
+}
